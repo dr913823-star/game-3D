@@ -1,0 +1,225 @@
+/**
+ * fazendeiro.js — Tomás, o Fazendeiro
+ * Chapéu de palha, roupa verde, ancinho
+ */
+(function (global) {
+    'use strict';
+
+    global.NPC_MESH_CREATORS = global.NPC_MESH_CREATORS || {};
+
+    global.NPC_MESH_CREATORS['farmer'] = function createFazendeiro(def) {
+        const s = def.scale || 1.0;
+        const group = new THREE.Group();
+        group.name = def.id;
+
+        const skin = 0xd4a574;
+        const cloth = 0x4d7c0f;
+        const accent = 0x365314;
+        const hairC = 0x5c4033;
+        const straw = 0xca8a04;
+        const wood = 0x5c3d2e;
+
+        const matSkin = new THREE.MeshStandardMaterial({ color: skin, roughness: 0.8 });
+        const matCloth = new THREE.MeshStandardMaterial({ color: cloth, roughness: 0.85 });
+        const matAccent = new THREE.MeshStandardMaterial({ color: accent, roughness: 0.85 });
+        const matHair = new THREE.MeshStandardMaterial({ color: hairC, roughness: 0.9 });
+        const matStraw = new THREE.MeshStandardMaterial({ color: straw, roughness: 0.95 });
+        const matWood = new THREE.MeshStandardMaterial({ color: wood, roughness: 0.85 });
+
+        // ===== TORSO =====
+        const torso = new THREE.Group();
+        torso.position.y = 1.22 * s;
+
+        const chest = new THREE.Mesh(new THREE.SphereGeometry(0.4 * s, 12, 10), matCloth);
+        chest.scale.set(1.2, 1.15, 0.88);
+        chest.castShadow = true;
+        torso.add(chest);
+
+        const shGeo = new THREE.SphereGeometry(0.18 * s, 10, 8);
+        const lSh = new THREE.Mesh(shGeo, matCloth);
+        lSh.position.set(-0.45 * s, 0.2 * s, 0);
+        lSh.castShadow = true;
+        torso.add(lSh);
+        const rSh = new THREE.Mesh(shGeo, matCloth);
+        rSh.position.set(0.45 * s, 0.2 * s, 0);
+        rSh.castShadow = true;
+        torso.add(rSh);
+
+        // Colete / faixa
+        const vest = new THREE.Mesh(new THREE.BoxGeometry(0.55 * s, 0.5 * s, 0.08 * s), matAccent);
+        vest.position.set(0, -0.05 * s, 0.3 * s);
+        torso.add(vest);
+
+        
+        // Cintura / quadris
+        const waist = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.3 * s, 0.36 * s, 0.25 * s, 10),
+            matCloth
+        );
+        waist.position.y = -0.4 * s;
+        waist.castShadow = true;
+        torso.add(waist);
+
+        const hips = new THREE.Mesh(
+            new THREE.SphereGeometry(0.32 * s, 10, 8),
+            matCloth
+        );
+        hips.position.y = -0.55 * s;
+        hips.scale.set(1.15, 0.5, 0.95);
+        hips.castShadow = true;
+        torso.add(hips);
+
+        // Cinto
+        const belt = new THREE.Mesh(
+            new THREE.TorusGeometry(0.34 * s, 0.04 * s, 6, 14),
+            matAccent
+        );
+        belt.rotation.x = Math.PI / 2;
+        belt.position.y = -0.35 * s;
+        torso.add(belt);
+
+        group.add(torso);
+
+        // ===== CABEÇA =====
+        const headY = 2.0 * s;
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.3 * s, 14, 12), matSkin);
+        head.position.y = headY;
+        head.castShadow = true;
+        group.add(head);
+        // Pescoço (mais longo, conecta cabeça ao torso)
+        const neck = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.1 * s, 0.13 * s, 0.3 * s, 8),
+            matSkin
+        );
+        neck.position.y = headY - 0.26 * s;
+        neck.castShadow = true;
+        group.add(neck);
+
+        // Base do pescoço / gola
+        const collar = new THREE.Mesh(
+            new THREE.SphereGeometry(0.17 * s, 10, 8),
+            matCloth
+        );
+        collar.position.y = headY - 0.4 * s;
+        collar.scale.set(1.3, 0.55, 1.15);
+        collar.castShadow = true;
+        group.add(collar);
+
+
+        // Cabelo
+        const hair = new THREE.Mesh(
+            new THREE.SphereGeometry(0.32 * s, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
+            matHair
+        );
+        hair.position.y = headY + 0.08 * s;
+        group.add(hair);
+
+        // Chapéu de palha
+        const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.45 * s, 0.45 * s, 0.04 * s, 14), matStraw);
+        brim.position.y = headY + 0.2 * s;
+        group.add(brim);
+        const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * s, 0.25 * s, 0.22 * s, 10), matStraw);
+        crown.position.y = headY + 0.32 * s;
+        group.add(crown);
+
+        // Olhos
+        const eyeWhite = new THREE.MeshStandardMaterial({ color: 0xf8fafc });
+        const eyeIris = new THREE.MeshStandardMaterial({ color: 0x365314 });
+        for (const sx of [-0.09, 0.09]) {
+            const eyeG = new THREE.Group();
+            const w = new THREE.Mesh(new THREE.SphereGeometry(0.05 * s, 8, 6), eyeWhite);
+            w.scale.set(1, 1, 0.7);
+            eyeG.add(w);
+            const iris = new THREE.Mesh(new THREE.SphereGeometry(0.028 * s, 6, 5), eyeIris);
+            iris.position.z = 0.032 * s;
+            eyeG.add(iris);
+            eyeG.position.set(sx * s, headY + 0.02 * s, 0.25 * s);
+            group.add(eyeG);
+        }
+
+        // ===== BRAÇOS =====
+        const armLen = 0.7 * s;
+        const armY = 1.32 * s;
+        const leftArm = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.09 * s, 0.075 * s, armLen, 8),
+            matCloth
+        );
+        leftArm.position.set(-0.5 * s, armY, 0);
+        leftArm.castShadow = true;
+        group.add(leftArm);
+
+        const rightArm = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.09 * s, 0.075 * s, armLen, 8),
+            matCloth
+        );
+        rightArm.position.set(0.5 * s, armY, 0);
+        rightArm.castShadow = true;
+        group.add(rightArm);
+
+        const handGeo = new THREE.SphereGeometry(0.08 * s, 8, 6);
+        const lHand = new THREE.Mesh(handGeo, matSkin);
+        lHand.position.set(-0.5 * s, armY - armLen * 0.55, 0);
+        group.add(lHand);
+        const rHand = new THREE.Mesh(handGeo, matSkin);
+        rHand.position.set(0.5 * s, armY - armLen * 0.55, 0);
+        group.add(rHand);
+
+        // Ancinho
+        const rake = new THREE.Mesh(new THREE.CylinderGeometry(0.025 * s, 0.03 * s, 1.7 * s, 6), matWood);
+        rake.position.set(0.55 * s, 0.95 * s, 0.1 * s);
+        rake.castShadow = true;
+        group.add(rake);
+        const teeth = new THREE.Mesh(new THREE.BoxGeometry(0.28 * s, 0.06 * s, 0.04 * s), matWood);
+        teeth.position.set(0.55 * s, 0.15 * s, 0.1 * s);
+        group.add(teeth);
+
+        // ===== PERNAS =====
+        const legLen = 0.72 * s;
+        const leftLeg = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.11 * s, 0.095 * s, legLen, 8),
+            matAccent
+        );
+        leftLeg.position.set(-0.15 * s, legLen * 0.5, 0);
+        leftLeg.castShadow = true;
+        group.add(leftLeg);
+
+        const rightLeg = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.11 * s, 0.095 * s, legLen, 8),
+            matAccent
+        );
+        rightLeg.position.set(0.15 * s, legLen * 0.5, 0);
+        rightLeg.castShadow = true;
+        group.add(rightLeg);
+
+        const bootGeo = new THREE.BoxGeometry(0.17 * s, 0.12 * s, 0.26 * s);
+        const matBoot = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
+        const lBoot = new THREE.Mesh(bootGeo, matBoot);
+        lBoot.position.set(-0.15 * s, 0.07 * s, 0.03 * s);
+        group.add(lBoot);
+        const rBoot = new THREE.Mesh(bootGeo, matBoot);
+        rBoot.position.set(0.15 * s, 0.07 * s, 0.03 * s);
+        group.add(rBoot);
+
+        const nameLabel = global.createNPCNameSprite
+            ? global.createNPCNameSprite(def.name, def.title)
+            : null;
+        if (nameLabel) {
+            nameLabel.position.y = 2.5 * s;
+            group.add(nameLabel);
+        }
+
+        return {
+            group,
+            torso: torso,
+            head,
+            leftArm,
+            rightArm,
+            leftLeg,
+            rightLeg,
+            nameLabel,
+            scale: s,
+            headBaseY: headY,
+            torsoBaseY: 1.22 * s
+        };
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
