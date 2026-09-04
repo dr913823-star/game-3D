@@ -35,16 +35,16 @@
         chest.castShadow = true;
         torso.add(chest);
 
-        // Ombreiras
-        const shGeo = new THREE.SphereGeometry(0.2 * s, 10, 8);
+        // Ombreiras (menores)
+        const shGeo = new THREE.SphereGeometry(0.14 * s, 10, 8);
         const lSh = new THREE.Mesh(shGeo, matDark);
-        lSh.position.set(-0.5 * s, 0.25 * s, 0);
-        lSh.scale.set(1.2, 0.9, 1);
+        lSh.position.set(-0.54 * s, 0.25 * s, 0);
+        lSh.scale.set(1.1, 0.9, 1);
         lSh.castShadow = true;
         torso.add(lSh);
         const rSh = new THREE.Mesh(shGeo, matDark);
-        rSh.position.set(0.5 * s, 0.25 * s, 0);
-        rSh.scale.set(1.2, 0.9, 1);
+        rSh.position.set(0.54 * s, 0.25 * s, 0);
+        rSh.scale.set(1.1, 0.9, 1);
         rSh.castShadow = true;
         torso.add(rSh);
 
@@ -130,77 +130,66 @@
         }
 
         // ===== BRAÇOS =====
-        const armLen = 0.72 * s;
-        const armY = 1.38 * s;
-        const leftArm = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.1 * s, 0.085 * s, armLen, 8),
-            matArmor
-        );
-        leftArm.position.set(-0.52 * s, armY, 0);
-        leftArm.castShadow = true;
-        group.add(leftArm);
+        // Pivot real no ombro: braço e mão acompanham juntos durante a animação.
+        const armLen = 0.68 * s;
+        const armY = 1.10 * s;
 
-        const rightArm = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.1 * s, 0.085 * s, armLen, 8),
-            matArmor
-        );
-        rightArm.position.set(0.52 * s, armY, 0);
-        rightArm.castShadow = true;
-        group.add(rightArm);
+        function makeNPCArm(side) {
+            const arm = new THREE.Group();
+            // O ponto de origem do grupo fica exatamente no centro do ombro.
+            arm.position.set(side * 0.54 * s, armY + armLen * 0.5, 0.02 * s);
 
-        const handGeo = new THREE.SphereGeometry(0.085 * s, 8, 6);
-        const lHand = new THREE.Mesh(handGeo, matSkin);
-        lHand.position.set(-0.52 * s, armY - armLen * 0.55, 0);
-        group.add(lHand);
-        const rHand = new THREE.Mesh(handGeo, matSkin);
-        rHand.position.set(0.52 * s, armY - armLen * 0.55, 0);
-        group.add(rHand);
+            const upper = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.08 * s, 0.07 * s, armLen, 8),
+                matArmor
+            );
+            upper.position.y = -armLen * 0.5;
+            upper.castShadow = true;
+            arm.add(upper);
 
-        // Escudo (braço esquerdo)
-        const shield = new THREE.Mesh(new THREE.BoxGeometry(0.1 * s, 0.6 * s, 0.42 * s), matShield);
-        shield.position.set(-0.6 * s, armY - 0.1 * s, 0.1 * s);
-        shield.castShadow = true;
-        group.add(shield);
-        // Emblema do escudo
-        const emblem = new THREE.Mesh(new THREE.SphereGeometry(0.1 * s, 8, 6), matMetal);
-        emblem.position.set(-0.66 * s, armY - 0.05 * s, 0.1 * s);
-        emblem.scale.set(0.4, 1, 1);
-        group.add(emblem);
+            const hand = new THREE.Mesh(
+                new THREE.SphereGeometry(0.085 * s, 8, 6),
+                matSkin
+            );
+            hand.position.y = -armLen;
+            hand.castShadow = true;
+            arm.add(hand);
 
-        // Espada (braço direito)
-        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.05 * s, 0.75 * s, 0.12 * s), matMetal);
-        blade.position.set(0.55 * s, armY + 0.05 * s, 0.08 * s);
-        blade.castShadow = true;
-        group.add(blade);
-        const guard = new THREE.Mesh(new THREE.BoxGeometry(0.18 * s, 0.04 * s, 0.08 * s), matMetal);
-        guard.position.set(0.55 * s, armY - 0.3 * s, 0.08 * s);
-        group.add(guard);
+            arm.rotation.z = side < 0 ? 0.06 : -0.06;
+            return arm;
+        }
+
+        const leftArm = makeNPCArm(-1);
+        const rightArm = makeNPCArm(1);
+        group.add(leftArm, rightArm);
 
         // ===== PERNAS =====
+        // Pivot no quadril: a perna gira a partir do topo, nunca pelo centro.
         const legLen = 0.75 * s;
-        const leftLeg = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.12 * s, 0.1 * s, legLen, 8),
-            matDark
-        );
-        leftLeg.position.set(-0.16 * s, legLen * 0.5, 0);
-        leftLeg.castShadow = true;
-        group.add(leftLeg);
+        function makeNPCLeg(side) {
+            const leg = new THREE.Group();
+            leg.position.set(side * 0.16 * s, legLen, 0);
 
-        const rightLeg = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.12 * s, 0.1 * s, legLen, 8),
-            matDark
-        );
-        rightLeg.position.set(0.16 * s, legLen * 0.5, 0);
-        rightLeg.castShadow = true;
-        group.add(rightLeg);
+            const shin = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.1 * s, 0.09 * s, legLen, 8),
+                matDark
+            );
+            shin.position.y = -legLen * 0.5;
+            shin.castShadow = true;
+            leg.add(shin);
 
-        const bootGeo = new THREE.BoxGeometry(0.18 * s, 0.14 * s, 0.28 * s);
-        const lBoot = new THREE.Mesh(bootGeo, matDark);
-        lBoot.position.set(-0.16 * s, 0.08 * s, 0.04 * s);
-        group.add(lBoot);
-        const rBoot = new THREE.Mesh(bootGeo, matDark);
-        rBoot.position.set(0.16 * s, 0.08 * s, 0.04 * s);
-        group.add(rBoot);
+            const foot = new THREE.Mesh(
+                new THREE.BoxGeometry(0.15 * s, 0.12 * s, 0.26 * s),
+                new THREE.MeshStandardMaterial({ color: 0x292524, roughness: 0.9 })
+            );
+            foot.position.set(0, -legLen, 0.04 * s);
+            leg.add(foot);
+            return leg;
+        }
+
+        const leftLeg = makeNPCLeg(-1);
+        const rightLeg = makeNPCLeg(1);
+        group.add(leftLeg, rightLeg);
 
         const nameLabel = global.createNPCNameSprite
             ? global.createNPCNameSprite(def.name, def.title)

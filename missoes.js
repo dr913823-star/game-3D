@@ -18,13 +18,13 @@
             giverId: 'npc_marcus',
             giverName: 'Ancião Marcus',
             title: 'Ameaça no Vale',
-            desc: 'Derrote 3 Goblins e volte a falar com Marcus.',
+            desc: 'Derrote 3 Goblins na floresta e volte a falar com Marcus.',
             target: 'goblin',
             need: 3,
             gold: 60,
             xp: 35,
             dialogueOffer:
-                'Saudações, viajante! Os goblins infestam o vale. Derrote três deles e volte — trarei ouro e bênçãos.',
+                'Saudações, viajante! Os goblins infestam a floresta ao norte. Derrote três deles e volte — trarei ouro e bênçãos.',
             dialogueProgress:
                 'Ainda há goblins por aí. Quando derrubar três, volte a mim.',
             dialogueComplete:
@@ -71,19 +71,19 @@
                 'Com a besta morta, a muralha pode descansar um pouco.'
         },
         npc_ferreiro: {
-            id: 'q_borin_crystals',
+            id: 'q_borin_ore',
             giverId: 'npc_ferreiro',
             giverName: 'Borin',
-            title: 'Minério Místico',
-            desc: 'Colete 2 Cristais Místicos para a forja de Borin.',
-            target: 'crystal',
-            need: 2,
-            gold: 50,
+            title: 'Minério da Floresta',
+            desc: 'Colete 3 minérios na floresta e entregue a Borin.',
+            target: 'ore',
+            need: 3,
+            gold: 55,
             xp: 30,
             dialogueOffer:
-                'Minha forja pede cristal puro! Traga dois Cristais Místicos e forjo com poder de verdade.',
+                'Minha forja pede minério puro! Vá à floresta, colete três minérios e traga-os — forjo com poder de verdade.',
             dialogueProgress:
-                'Ainda preciso de cristais. Procure brilhos no campo e nas ruínas.',
+                'Ainda preciso de minério. Procure pedras brilhantes entre as árvores da floresta.',
             dialogueComplete:
                 'Perfeito! Com isto a bigorna canta. Tome ouro pelo trabalho.',
             dialogueDone:
@@ -93,37 +93,37 @@
             id: 'q_elara_herbs',
             giverId: 'npc_curandeira',
             giverName: 'Elara',
-            title: 'Ervas do Rio',
-            desc: 'Fale com Elara após visitar o poço central (chegue perto do poço).',
-            target: 'well_visit',
-            need: 1,
-            gold: 35,
-            xp: 20,
+            title: 'Ervas Medicinais',
+            desc: 'Colete 3 ervas medicinais na floresta e entregue a Elara.',
+            target: 'herb',
+            need: 3,
+            gold: 40,
+            xp: 25,
             dialogueOffer:
-                'Preciso que alguém confira o poço central — a água deve estar pura. Vá até o poço e volte a mim.',
+                'Preciso de ervas frescas para as poções. Vá à floresta, colha três ervas medicinais e traga-as a mim.',
             dialogueProgress:
-                'O poço ainda não foi verificado. Fica no centro da vila.',
+                'Ainda faltam ervas. Procure folhas verdes brilhantes entre a vegetação da floresta.',
             dialogueComplete:
-                'A água está boa, então. Obrigada! Tome estas moedas para a viagem.',
+                'Excelente! Com estas ervas preparo remédios poderosos. Tome estas moedas.',
             dialogueDone:
                 'Suas feridas sempre encontrarão alívio aqui.'
         },
         npc_comerciante: {
-            id: 'q_vessa_gold',
+            id: 'q_vessa_crystals',
             giverId: 'npc_comerciante',
             giverName: 'Vessa',
-            title: 'Cliente de Valor',
-            desc: 'Gaste ouro na Forja de Borin (compre qualquer item) e volte a Vessa.',
-            target: 'shop_buy',
-            need: 1,
-            gold: 40,
-            xp: 20,
+            title: 'Cristais para o Mercado',
+            desc: 'Colete 2 Cristais Místicos e volte a Vessa.',
+            target: 'crystal',
+            need: 2,
+            gold: 50,
+            xp: 25,
             dialogueOffer:
-                'O comércio flui quando a forja vende! Compre algo com Borin e volte — recompenso bons clientes.',
+                'Cristais místicos vendem bem na tenda! Traga dois e recompenso o esforço.',
             dialogueProgress:
-                'Ainda não vi movimento na forja... Compre algo com o ferreiro e volte.',
+                'Ainda não vi cristais... Procure brilhos azuis no campo e nas ruínas.',
             dialogueComplete:
-                'Negócio é negócio! Aqui está uma gorjeta pelo estímulo ao mercado local.',
+                'Negócio é negócio! Aqui está uma gorjeta pelos cristais.',
             dialogueDone:
                 'Sempre tenho algo misterioso na tenda, se tiver ouro...'
         },
@@ -299,6 +299,19 @@
                 if (!this.byId[id]) continue;
                 Object.assign(this.byId[id], data[id]);
             }
+        }
+
+        /** Reinicia todas as missões (nova jornada) */
+        reset() {
+            for (const id of this.order) {
+                const q = this.byId[id];
+                if (!q) continue;
+                q.cur = 0;
+                q.status = 'available';
+                q.accepted = false;
+                q.done = false;
+            }
+            this.idx = 0;
         }
     }
 

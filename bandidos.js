@@ -1,6 +1,7 @@
 /**
  * bandidos.js — Sistema de Bandidos do Vale Selvagem (mapa2)
  * Humanos hostis: Bandido, Arqueiro e Líder
+ * Visual: ladrão medieval (capuz, capa, besta, botas de couro)
  *
  * Depende de: THREE (global)
  * API pública:
@@ -15,17 +16,17 @@
     'use strict';
 
     // -------------------------------------------------------------------------
-    // TIPOS DE BANDIDO
+    // TIPOS DE BANDIDO (visual de ladrão medieval)
     // -------------------------------------------------------------------------
     const BANDIT_TYPES = {
         bandit: {
-            label: 'Bandido',
+            label: 'Ladrão',
             hp: 55,
             speed: 4.0,
             damage: 12,
-            color: 0x4a3728,      // colete marrom
-            accent: 0x2c1810,
-            skin: 0xc68642,
+            color: 0x24352a,      // pano verde-escuro
+            accent: 0x17120f,     // couro quase preto
+            skin: 0xffdbac,
             scale: 1.0,
             xp: 28,
             goldMin: 10,
@@ -33,33 +34,33 @@
             aggroRange: 15,
             attackRange: 2.3,
             attackCooldown: 1.2,
-            eyeColor: 0x1c1917
+            eyeColor: 0x220000
         },
         archer: {
-            label: 'Bandido Arqueiro',
+            label: 'Ladrão Besta',
             hp: 40,
             speed: 3.6,
             damage: 14,
-            color: 0x3f3f46,      // roupa escura
-            accent: 0x27272a,
-            skin: 0xd4a574,
+            color: 0x24352a,
+            accent: 0x17120f,
+            skin: 0xffdbac,
             scale: 0.98,
             xp: 32,
             goldMin: 12,
             goldMax: 25,
             aggroRange: 20,
-            attackRange: 8.5,     // ataca de longe (simulado)
+            attackRange: 8.5,
             attackCooldown: 1.6,
-            eyeColor: 0x1c1917
+            eyeColor: 0x220000
         },
         leader: {
-            label: 'Líder dos Bandidos',
+            label: 'Chefe dos Ladrões',
             hp: 110,
             speed: 3.8,
             damage: 20,
-            color: 0x1e293b,      // armadura escura
-            accent: 0x0f172a,
-            skin: 0xb45309,
+            color: 0x1a2a22,
+            accent: 0x0d0a08,
+            skin: 0xe8c49a,
             scale: 1.12,
             xp: 60,
             goldMin: 30,
@@ -110,7 +111,7 @@
     }
 
     // -------------------------------------------------------------------------
-    // MESH HUMANO DE BANDIDO
+    // MESH DE LADRÃO MEDIEVAL (baseado em inimigo-ladrao.html)
     // -------------------------------------------------------------------------
     function createBanditMesh(def, typeKey) {
         const s = def.scale;
@@ -118,154 +119,290 @@
         const isArcher = typeKey === 'archer';
         const isLeader = typeKey === 'leader';
 
-        const matBody = texMat(isLeader ? 'armor' : 'cloth', def.color, {
-            roughness: 0.75, metalness: isLeader ? 0.35 : 0.08
+        const matCloth = texMat('cloth', def.color, { roughness: 0.95, metalness: 0.02, bump: 0.25 });
+        const matDark = texMat('leather', def.accent, { roughness: 0.98, metalness: 0.02, bump: 0.3 });
+        const matAccent = texMat('leather', 0x34383f, { roughness: 0.75, metalness: 0.08, bump: 0.2 });
+        const matSkin = texMat('skin', def.skin, { roughness: 0.65, metalness: 0.05, bump: 0.15 });
+        const matLeather = texMat('leather', 0x4a2d1b, { roughness: 0.88, metalness: 0.02, bump: 0.35 });
+        const matAgedLeather = texMat('leather', 0x25150d, { roughness: 0.95, metalness: 0.02, bump: 0.3 });
+        const matBronze = texMat('armor', 0x8b6b32, { roughness: 0.55, metalness: 0.55, bump: 0.2 });
+        const matBoot = texMat('leather', 0x3a2416, { roughness: 0.82, metalness: 0.02, bump: 0.3 });
+        const matBootAccent = texMat('leather', 0x21140d, { roughness: 0.9, metalness: 0.02, bump: 0.25 });
+        const matPants = texMat('cloth', 0x2c3e50, { roughness: 0.9, metalness: 0.04, bump: 0.25 });
+        const matMetal = texMat('armor', isLeader ? 0x6b5b3a : 0x5a4a2a, {
+            metalness: isLeader ? 0.7 : 0.45, roughness: 0.4, bump: 0.25
         });
-        const matAccent = texMat(isLeader ? 'armor' : 'leather', def.accent, {
-            roughness: 0.8, metalness: 0.1
-        });
-        const matSkin = texMat('skin', def.skin, {
-            roughness: 0.78, metalness: 0.02, bump: 0.15
-        });
-        const matMetal = texMat('armor', 0x94a3b8, {
-            metalness: 0.85, roughness: 0.3, bump: 0.25
-        });
-        const matHair = texMat(isArcher ? 'cloth' : 'hair', 0x1c1917, {
-            roughness: 0.9, bump: 0.2
-        });
-        const matLeather = texMat('leather', 0x5c4033, {
-            roughness: 0.85, bump: 0.35
-        });
+        const matEyeWhite = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1 });
+        const matEvil = new THREE.MeshBasicMaterial({ color: def.eyeColor || 0x220000 });
 
         // ===== TORSO =====
         const torso = new THREE.Group();
-        torso.position.y = 1.25 * s;
+        torso.position.y = 1.35 * s;
 
         const chest = new THREE.Mesh(
-            new THREE.SphereGeometry(0.38 * s, 12, 10),
-            matBody
+            new THREE.BoxGeometry(0.78 * s, 0.48 * s, 0.42 * s),
+            matCloth
         );
-        chest.scale.set(1.15, 1.1, 0.85);
+        chest.position.y = 0.12 * s;
         chest.castShadow = true;
         torso.add(chest);
 
-        // Colete / armadura
-        const vest = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.36 * s, 0.40 * s, 0.55 * s, 10),
-            matAccent
+        const waist = new THREE.Mesh(
+            new THREE.BoxGeometry(0.52 * s, 0.42 * s, 0.32 * s),
+            matCloth
         );
-        vest.position.y = -0.05 * s;
+        waist.position.y = -0.28 * s;
+        waist.castShadow = true;
+        torso.add(waist);
+
+        const vest = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.36 * s, 0.40 * s, 0.52 * s, 10),
+            matCloth
+        );
+        vest.position.y = 0.08 * s;
         vest.castShadow = true;
         torso.add(vest);
 
+        const chestStrap = new THREE.Mesh(
+            new THREE.BoxGeometry(0.09 * s, 0.62 * s, 0.035 * s),
+            matAccent
+        );
+        chestStrap.position.set(0.03 * s, 0.08 * s, 0.23 * s);
+        chestStrap.rotation.z = 0.55;
+        torso.add(chestStrap);
+
+        const belt = new THREE.Mesh(
+            new THREE.BoxGeometry(0.54 * s, 0.07 * s, 0.34 * s),
+            matDark
+        );
+        belt.position.y = -0.32 * s;
+        torso.add(belt);
+
         if (isLeader) {
-            // Ombreiras
             for (const side of [-1, 1]) {
                 const sh = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.18 * s, 8, 6),
-                    matMetal
+                    new THREE.SphereGeometry(0.14 * s, 10, 8),
+                    matBronze
                 );
-                sh.position.set(side * 0.42 * s, 0.22 * s, 0);
-                sh.scale.set(1.1, 0.85, 1);
+                sh.position.set(side * 0.40 * s, 0.28 * s, 0);
+                sh.scale.set(1.15, 0.8, 1.0);
+                sh.castShadow = true;
                 torso.add(sh);
             }
         }
 
-        // Cinto
-        const belt = new THREE.Mesh(
-            new THREE.TorusGeometry(0.36 * s, 0.04 * s, 6, 14),
-            matLeather
+        const cloak = new THREE.Mesh(
+            new THREE.ConeGeometry(0.42 * s, 0.95 * s, 8, 1, true),
+            matDark
         );
-        belt.rotation.x = Math.PI / 2;
-        belt.position.y = -0.32 * s;
-        torso.add(belt);
+        cloak.scale.z = 0.28;
+        cloak.rotation.x = Math.PI;
+        cloak.position.set(0, -0.15 * s, -0.24 * s);
+        cloak.castShadow = true;
+        torso.add(cloak);
 
         group.add(torso);
 
         // ===== CABEÇA =====
         const headY = 1.95 * s;
+        const headGroup = new THREE.Group();
+        headGroup.position.y = headY;
+        group.add(headGroup);
+
         const head = new THREE.Mesh(
-            new THREE.SphereGeometry(0.27 * s, 12, 10),
+            new THREE.SphereGeometry(0.28 * s, 16, 14),
             matSkin
         );
-        head.position.y = headY;
         head.castShadow = true;
-        group.add(head);
+        headGroup.add(head);
 
-        // Cabelo / capuz (hemisfério — não cobre o rosto)
-        const hair = new THREE.Mesh(
-            new THREE.SphereGeometry(0.29 * s, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
-            isArcher ? matLeather : matHair
+        const neck = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.10 * s, 0.10 * s, 0.22 * s, 10),
+            matSkin
         );
-        hair.position.y = headY + 0.08 * s;
-        hair.castShadow = true;
-        group.add(hair);
+        neck.position.y = -0.22 * s;
+        headGroup.add(neck);
 
-        // Olhos
-        for (const sx of [-0.09, 0.09]) {
+        const beanie = new THREE.Mesh(
+            new THREE.SphereGeometry(0.30 * s, 16, 12),
+            matCloth
+        );
+        beanie.scale.set(1.02, 0.52, 1.02);
+        beanie.position.y = 0.22 * s;
+        beanie.castShadow = true;
+        headGroup.add(beanie);
+
+        const browGeo = new THREE.BoxGeometry(0.13 * s, 0.025 * s, 0.02 * s);
+        const leftBrow = new THREE.Mesh(browGeo, matDark);
+        leftBrow.position.set(0.10 * s, 0.13 * s, 0.26 * s);
+        leftBrow.rotation.z = 0.32;
+        headGroup.add(leftBrow);
+        const rightBrow = leftBrow.clone();
+        rightBrow.position.x = -0.10 * s;
+        rightBrow.rotation.z = -0.32;
+        headGroup.add(rightBrow);
+
+        for (const sx of [-0.10, 0.10]) {
             const eye = new THREE.Mesh(
-                new THREE.SphereGeometry(0.035 * s, 6, 5),
-                new THREE.MeshStandardMaterial({ color: 0x111111 })
+                new THREE.SphereGeometry(0.055 * s, 10, 8),
+                matEyeWhite
             );
-            eye.position.set(sx * s, headY + 0.02 * s, 0.24 * s);
-            group.add(eye);
+            eye.position.set(sx * s, 0.04 * s, 0.24 * s);
+            eye.scale.set(1.0, 0.55, 0.35);
+            headGroup.add(eye);
+
+            const pupil = new THREE.Mesh(
+                new THREE.SphereGeometry(0.022 * s, 8, 6),
+                matEvil
+            );
+            pupil.position.set(sx * s, 0.038 * s, 0.275 * s);
+            headGroup.add(pupil);
         }
+
+        const mouth = new THREE.Mesh(
+            new THREE.TorusGeometry(0.095 * s, 0.014 * s, 6, 12, Math.PI),
+            matEvil
+        );
+        mouth.position.set(0, -0.11 * s, 0.27 * s);
+        headGroup.add(mouth);
 
         // ===== BRAÇOS =====
         function makeArm(side) {
             const arm = new THREE.Group();
-            arm.position.set(side * 0.42 * s, 1.45 * s, 0);
+            arm.position.set(side * 0.42 * s, 1.55 * s, 0);
+
+            const shoulder = new THREE.Mesh(
+                new THREE.SphereGeometry(0.11 * s, 12, 10),
+                matCloth
+            );
+            shoulder.scale.set(1.0, 0.9, 1.0);
+            shoulder.castShadow = true;
+            arm.add(shoulder);
+
+            const sleeve = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.10 * s, 0.085 * s, 0.28 * s, 10),
+                matCloth
+            );
+            sleeve.position.y = -0.12 * s;
+            arm.add(sleeve);
 
             const upper = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.09 * s, 0.08 * s, 0.45 * s, 7),
-                matBody
+                new THREE.CylinderGeometry(0.08 * s, 0.07 * s, 0.55 * s, 10),
+                matSkin
             );
-            upper.position.y = -0.22 * s;
+            upper.position.y = -0.48 * s;
             upper.castShadow = true;
             arm.add(upper);
 
-            const lower = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.07 * s, 0.06 * s, 0.4 * s, 7),
-                matSkin
-            );
-            lower.position.y = -0.62 * s;
-            lower.castShadow = true;
-            arm.add(lower);
-
-            // Mão
             const hand = new THREE.Mesh(
-                new THREE.SphereGeometry(0.07 * s, 6, 5),
+                new THREE.SphereGeometry(0.08 * s, 10, 8),
                 matSkin
             );
-            hand.position.y = -0.85 * s;
+            hand.scale.set(0.9, 1.1, 0.9);
+            hand.position.y = -0.82 * s;
+            hand.castShadow = true;
             arm.add(hand);
 
-            // Arma
-            if (isArcher && side === 1) {
-                // Arco simples
-                const bow = new THREE.Mesh(
-                    new THREE.TorusGeometry(0.28 * s, 0.025 * s, 6, 12, Math.PI),
-                    matLeather
-                );
-                bow.rotation.y = Math.PI / 2;
-                bow.position.set(0.08 * s, -0.5 * s, 0);
-                arm.add(bow);
-            } else if (side === -1 || isLeader) {
-                // Espada / adaga
-                const blade = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.04 * s, 0.55 * s, 0.08 * s),
-                    matMetal
-                );
-                blade.position.set(side * 0.05 * s, -0.95 * s, 0.05 * s);
-                blade.rotation.z = side * 0.15;
-                arm.add(blade);
+            // Uma arma só, sempre na mão direita (side === 1)
+            if (side === 1) {
+                if (isArcher) {
+                    // Besta medieval (do inimigo-ladrao.html) — única arma
+                    const crossbow = new THREE.Group();
+                    crossbow.position.set(0.02 * s, -0.78 * s, 0.06 * s);
+                    crossbow.rotation.x = Math.PI / 2;
 
-                const hilt = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.03 * s, 0.03 * s, 0.12 * s, 6),
-                    matLeather
-                );
-                hilt.position.set(side * 0.05 * s, -0.65 * s, 0.05 * s);
-                arm.add(hilt);
+                    const grip = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.07 * s, 0.20 * s, 0.09 * s),
+                        matAgedLeather
+                    );
+                    grip.rotation.x = -0.25;
+                    grip.position.set(0, -0.08 * s, 0);
+                    crossbow.add(grip);
+
+                    // Corpo de madeira da besta
+                    const body = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.09 * s, 0.07 * s, 0.50 * s),
+                        matLeather
+                    );
+                    body.position.set(0, 0.05 * s, 0.20 * s);
+                    body.castShadow = true;
+                    crossbow.add(body);
+
+                    // Arco transversal curvo
+                    const bow = new THREE.Mesh(
+                        new THREE.TorusGeometry(0.19 * s, 0.014 * s, 6, 14, Math.PI),
+                        matBronze
+                    );
+                    bow.rotation.y = Math.PI / 2;
+                    bow.position.set(0, 0.06 * s, 0.38 * s);
+                    crossbow.add(bow);
+
+                    // Corda
+                    const string = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.004 * s, 0.004 * s, 0.35 * s, 6),
+                        new THREE.MeshBasicMaterial({ color: 0xd6c6a5 })
+                    );
+                    string.rotation.z = Math.PI / 2;
+                    string.position.set(0, 0.06 * s, 0.38 * s);
+                    crossbow.add(string);
+
+                    // Cano / trilho do virote
+                    const barrel = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.014 * s, 0.014 * s, 0.26 * s, 8),
+                        matBronze
+                    );
+                    barrel.rotation.x = Math.PI / 2;
+                    barrel.position.set(0, 0.065 * s, 0.44 * s);
+                    crossbow.add(barrel);
+
+                    // Guarda do gatilho
+                    const triggerGuard = new THREE.Mesh(
+                        new THREE.TorusGeometry(0.03 * s, 0.007 * s, 6, 10),
+                        matBronze
+                    );
+                    triggerGuard.rotation.x = Math.PI / 2;
+                    triggerGuard.position.set(0, -0.01 * s, 0.03 * s);
+                    crossbow.add(triggerGuard);
+
+                    arm.add(crossbow);
+                } else {
+                    // Faca / adaga (única arma do corpo a corpo)
+                    const knife = new THREE.Group();
+                    knife.position.set(0.02 * s, -0.82 * s, 0.04 * s);
+
+                    const blade = new THREE.Mesh(
+                        new THREE.ConeGeometry(0.035 * s, 0.38 * s, 4),
+                        matMetal
+                    );
+                    blade.rotation.x = Math.PI;
+                    blade.position.set(0, -0.28 * s, 0);
+                    blade.scale.set(0.55, 1, 0.18);
+                    blade.castShadow = true;
+                    knife.add(blade);
+
+                    const guard = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.10 * s, 0.02 * s, 0.04 * s),
+                        matBronze
+                    );
+                    guard.position.set(0, -0.08 * s, 0);
+                    knife.add(guard);
+
+                    const hilt = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.022 * s, 0.025 * s, 0.12 * s, 8),
+                        matAgedLeather
+                    );
+                    hilt.position.set(0, 0.0 * s, 0);
+                    knife.add(hilt);
+
+                    const pommel = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.028 * s, 8, 6),
+                        matBronze
+                    );
+                    pommel.position.set(0, 0.07 * s, 0);
+                    knife.add(pommel);
+
+                    arm.add(knife);
+                }
             }
 
             return arm;
@@ -279,31 +416,81 @@
         // ===== PERNAS =====
         function makeLeg(side) {
             const leg = new THREE.Group();
-            leg.position.set(side * 0.16 * s, 0.85 * s, 0);
+            leg.position.set(side * 0.18 * s, 0.90 * s, 0);
 
             const thigh = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.11 * s, 0.09 * s, 0.45 * s, 7),
-                matAccent
+                new THREE.CylinderGeometry(0.11 * s, 0.09 * s, 0.48 * s, 10),
+                matPants
             );
-            thigh.position.y = -0.2 * s;
+            thigh.position.y = -0.20 * s;
             thigh.castShadow = true;
             leg.add(thigh);
 
             const shin = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.08 * s, 0.07 * s, 0.4 * s, 7),
-                matBody
+                new THREE.CylinderGeometry(0.08 * s, 0.07 * s, 0.42 * s, 10),
+                matPants
             );
-            shin.position.y = -0.6 * s;
+            shin.position.y = -0.62 * s;
             shin.castShadow = true;
             leg.add(shin);
 
-            const foot = new THREE.Mesh(
-                new THREE.BoxGeometry(0.12 * s, 0.08 * s, 0.2 * s),
-                matLeather
-            );
-            foot.position.set(0, -0.85 * s, 0.04 * s);
-            leg.add(foot);
+            for (let i = 0; i < 3; i++) {
+                const wrap = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.085 * s, 0.012 * s, 6, 12),
+                    matAgedLeather
+                );
+                wrap.rotation.x = Math.PI / 2;
+                wrap.position.set(0, -0.42 * s - i * 0.14 * s, 0);
+                leg.add(wrap);
+            }
 
+            const bootGroup = new THREE.Group();
+            bootGroup.position.y = -0.88 * s;
+
+            const bootShaft = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.12 * s, 0.14 * s, 0.24 * s, 12),
+                matBoot
+            );
+            bootShaft.position.y = 0.04 * s;
+            bootShaft.castShadow = true;
+            bootGroup.add(bootShaft);
+
+            const foot = new THREE.Mesh(
+                new THREE.SphereGeometry(0.16 * s, 12, 10),
+                matBoot
+            );
+            foot.scale.set(0.82, 0.55, 1.25);
+            foot.position.set(0, -0.06 * s, 0.10 * s);
+            foot.castShadow = true;
+            bootGroup.add(foot);
+
+            const sole = new THREE.Mesh(
+                new THREE.SphereGeometry(0.165 * s, 12, 8),
+                matBootAccent
+            );
+            sole.scale.set(0.84, 0.18, 1.28);
+            sole.position.set(0, -0.14 * s, 0.10 * s);
+            bootGroup.add(sole);
+
+            const toe = new THREE.Mesh(
+                new THREE.SphereGeometry(0.10 * s, 10, 8),
+                matBoot
+            );
+            toe.scale.set(0.9, 0.6, 1.1);
+            toe.position.set(0, -0.02 * s, 0.26 * s);
+            toe.rotation.x = -0.12;
+            bootGroup.add(toe);
+
+            const band = new THREE.Mesh(
+                new THREE.TorusGeometry(0.13 * s, 0.015 * s, 8, 12),
+                matBootAccent
+            );
+            band.scale.set(1, 0.7, 1);
+            band.rotation.x = Math.PI / 2;
+            band.position.y = 0.12 * s;
+            bootGroup.add(band);
+
+            leg.add(bootGroup);
             return leg;
         }
 
@@ -315,7 +502,7 @@
         // ===== BARRA DE VIDA + NOME =====
         const barBg = new THREE.Mesh(
             new THREE.PlaneGeometry(0.9 * s, 0.1 * s),
-            new THREE.MeshBasicMaterial({ color: 0x1c1917, transparent: true, opacity: 0.75, depthSide: THREE.DoubleSide })
+            new THREE.MeshBasicMaterial({ color: 0x1c1917, transparent: true, opacity: 0.75, side: THREE.DoubleSide })
         );
         barBg.position.y = 2.55 * s;
         group.add(barBg);
@@ -327,7 +514,6 @@
         barFg.position.set(0, 2.55 * s, 0.01);
         group.add(barFg);
 
-        // Label de nome (sprite simples)
         const canvas = document.createElement('canvas');
         canvas.width = 256;
         canvas.height = 48;
@@ -345,7 +531,6 @@
         nameLabel.position.y = 2.85 * s;
         group.add(nameLabel);
 
-        // Sombra falsa no chão
         if (typeof EnemyTex !== 'undefined' && EnemyTex.groundShadow) {
             const blob = EnemyTex.groundShadow(0.7 * s);
             blob.position.y = 0.04;
@@ -397,27 +582,26 @@
             if (p.rightLeg) p.rightLeg.rotation.x = -0.08;
 
             if (isArcher) {
-                // Arqueiro: puxa o arco e solta
+                // Ladrão Besta: braço direito sobe alto e aponta a besta para frente
                 if (p.leftArm) {
-                    p.leftArm.rotation.x = -0.9;
-                    p.leftArm.rotation.z = -0.15;
+                    p.leftArm.rotation.x = -0.35;
+                    p.leftArm.rotation.z = -0.2;
                 }
                 if (p.rightArm) {
-                    // Braço da corda: puxa para trás no início e solta
-                    const pull = prog < 0.55 ? swing : swing * 0.3;
-                    p.rightArm.rotation.x = -0.5 - pull * 0.9;
-                    p.rightArm.rotation.z = 0.25;
+                    // Sobe até quase horizontal ( -PI/2 ) no pico do swing
+                    p.rightArm.rotation.x = -0.4 - swing * 1.35; // pico ≈ -1.75
+                    p.rightArm.rotation.z = 0.08;
                 }
                 if (p.torso) p.torso.rotation.y = swing * 0.12;
             } else {
-                // Corpo a corpo: braço armado sobe e desce no golpe
+                // Corpo a corpo: braço armado sobe bem alto no golpe
                 if (p.rightArm) {
-                    p.rightArm.rotation.x = -0.35 - swing * 1.7;
-                    p.rightArm.rotation.z = 0.15 + swing * 0.35;
+                    p.rightArm.rotation.x = -0.5 - swing * 2.1; // pico ≈ -2.6 (bem alto)
+                    p.rightArm.rotation.z = 0.1 + swing * 0.25;
                 }
                 if (p.leftArm) {
-                    p.leftArm.rotation.x = -0.25;
-                    p.leftArm.rotation.z = -0.2;
+                    p.leftArm.rotation.x = -0.2;
+                    p.leftArm.rotation.z = -0.25;
                 }
                 if (p.torso) {
                     p.torso.rotation.y = swing * 0.28;
@@ -750,6 +934,10 @@
 
                 if (typeof Game !== 'undefined') {
                     Game.spawnParticles?.(e.pos, 0xef4444, 6);
+                }
+                if (typeof Sound !== 'undefined') {
+                    if (Sound.playEnemyHit) Sound.playEnemyHit(e.type || 'bandit');
+                    else Sound.playHit?.();
                 }
 
                 if (e.hp <= 0) {

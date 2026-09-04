@@ -42,12 +42,12 @@
         skirt.castShadow = true;
         torso.add(skirt);
 
-        const shGeo = new THREE.SphereGeometry(0.14 * s, 8, 6);
+        const shGeo = new THREE.SphereGeometry(0.11 * s, 8, 6);
         const lSh = new THREE.Mesh(shGeo, matCloth);
-        lSh.position.set(-0.35 * s, 0.15 * s, 0);
+        lSh.position.set(-0.40 * s, 0.15 * s, 0);
         torso.add(lSh);
         const rSh = new THREE.Mesh(shGeo, matCloth);
-        rSh.position.set(0.35 * s, 0.15 * s, 0);
+        rSh.position.set(0.40 * s, 0.15 * s, 0);
         torso.add(rSh);
 
         
@@ -135,57 +135,66 @@
         }
 
         // ===== BRAÇOS =====
-        const armLen = 0.5 * s;
-        const armY = 1.0 * s;
-        const leftArm = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.07 * s, 0.06 * s, armLen, 8),
-            matCloth
-        );
-        leftArm.position.set(-0.4 * s, armY, 0);
-        leftArm.castShadow = true;
-        group.add(leftArm);
+        // Pivot real no ombro: braço e mão acompanham juntos durante a animação.
+        const armLen = 0.55 * s;
+        const armY = 0.88 * s;
 
-        const rightArm = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.07 * s, 0.06 * s, armLen, 8),
-            matCloth
-        );
-        rightArm.position.set(0.4 * s, armY, 0);
-        rightArm.castShadow = true;
-        group.add(rightArm);
+        function makeNPCArm(side) {
+            const arm = new THREE.Group();
+            // O ponto de origem do grupo fica exatamente no centro do ombro.
+            arm.position.set(side * 0.40 * s, armY + armLen * 0.5, 0.02 * s);
 
-        const handGeo = new THREE.SphereGeometry(0.065 * s, 8, 6);
-        const lHand = new THREE.Mesh(handGeo, matSkin);
-        lHand.position.set(-0.4 * s, armY - armLen * 0.55, 0);
-        group.add(lHand);
-        const rHand = new THREE.Mesh(handGeo, matSkin);
-        rHand.position.set(0.4 * s, armY - armLen * 0.55, 0);
-        group.add(rHand);
+            const upper = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.08 * s, 0.07 * s, armLen, 8),
+                matCloth
+            );
+            upper.position.y = -armLen * 0.5;
+            upper.castShadow = true;
+            arm.add(upper);
+
+            const hand = new THREE.Mesh(
+                new THREE.SphereGeometry(0.065 * s, 8, 6),
+                matSkin
+            );
+            hand.position.y = -armLen;
+            hand.castShadow = true;
+            arm.add(hand);
+
+            arm.rotation.z = side < 0 ? 0.06 : -0.06;
+            return arm;
+        }
+
+        const leftArm = makeNPCArm(-1);
+        const rightArm = makeNPCArm(1);
+        group.add(leftArm, rightArm);
 
         // ===== PERNAS =====
+        // Pivot no quadril: a perna gira a partir do topo, nunca pelo centro.
         const legLen = 0.52 * s;
-        const leftLeg = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.08 * s, 0.07 * s, legLen, 8),
-            matAccent
-        );
-        leftLeg.position.set(-0.12 * s, legLen * 0.5, 0);
-        leftLeg.castShadow = true;
-        group.add(leftLeg);
+        function makeNPCLeg(side) {
+            const leg = new THREE.Group();
+            leg.position.set(side * 0.12 * s, legLen, 0);
 
-        const rightLeg = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.08 * s, 0.07 * s, legLen, 8),
-            matAccent
-        );
-        rightLeg.position.set(0.12 * s, legLen * 0.5, 0);
-        rightLeg.castShadow = true;
-        group.add(rightLeg);
+            const shin = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.1 * s, 0.09 * s, legLen, 8),
+                matAccent
+            );
+            shin.position.y = -legLen * 0.5;
+            shin.castShadow = true;
+            leg.add(shin);
 
-        const shoeGeo = new THREE.BoxGeometry(0.12 * s, 0.08 * s, 0.18 * s);
-        const lShoe = new THREE.Mesh(shoeGeo, matPink);
-        lShoe.position.set(-0.12 * s, 0.05 * s, 0.02 * s);
-        group.add(lShoe);
-        const rShoe = new THREE.Mesh(shoeGeo, matPink);
-        rShoe.position.set(0.12 * s, 0.05 * s, 0.02 * s);
-        group.add(rShoe);
+            const foot = new THREE.Mesh(
+                new THREE.BoxGeometry(0.15 * s, 0.12 * s, 0.26 * s),
+                new THREE.MeshStandardMaterial({ color: 0x292524, roughness: 0.9 })
+            );
+            foot.position.set(0, -legLen, 0.04 * s);
+            leg.add(foot);
+            return leg;
+        }
+
+        const leftLeg = makeNPCLeg(-1);
+        const rightLeg = makeNPCLeg(1);
+        group.add(leftLeg, rightLeg);
 
         const nameLabel = global.createNPCNameSprite
             ? global.createNPCNameSprite(def.name, def.title)

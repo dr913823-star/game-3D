@@ -353,6 +353,58 @@
             category: 'axe',
             style: 'inferno'
         },
+        {
+            id: 'axe_frost',
+            name: 'Machado de Gelo Eterno',
+            desc: 'Cristais de gelo enfeitiçados. Tipo: Machado Mágico · Dano 76 · Alcance médio · Enxerto de gelo.',
+            icon: 'fa-snowflake',
+            price: 460,
+            damage: 76,
+            range: 3.85,
+            attackDuration: 0.49,
+            rarity: 'legendary',
+            category: 'axe',
+            style: 'frost'
+        },
+        {
+            id: 'axe_shadow',
+            name: 'Machado das Sombras',
+            desc: 'Forjado nas trevas. Tipo: Machado Sombrio · Dano 72 · Alcance médio · Absorção de sombra.',
+            icon: 'fa-moon',
+            price: 440,
+            damage: 72,
+            range: 3.8,
+            attackDuration: 0.48,
+            rarity: 'epic',
+            category: 'axe',
+            style: 'shadow'
+        },
+        {
+            id: 'axe_crystal',
+            name: 'Machado Cristalino',
+            desc: 'Lâmina de cristal puro. Tipo: Machado Místico · Dano 84 · Alcance médio-longo · Refração.',
+            icon: 'fa-gem',
+            price: 550,
+            damage: 84,
+            range: 4.0,
+            attackDuration: 0.46,
+            rarity: 'legendary',
+            category: 'axe',
+            style: 'crystal'
+        },
+        {
+            id: 'axe_defenser',
+            name: 'Machado Defensivo do Guarda',
+            desc: 'Grande machado defensivo. Tipo: Machado · Dano 66 · Alcance médio. (Defensor)',
+            icon: 'fa-axe',
+            price: 320,
+            damage: 66,
+            range: 3.7,
+            attackDuration: 0.51,
+            rarity: 'rare',
+            category: 'axe',
+            style: 'steel'
+        },
 
         // ── MARTELOS ──
         {
@@ -889,13 +941,14 @@
         const bladeW = isGreat ? 0.11 : 0.07;
         const bladeD = isGreat ? 0.28 : 0.2;
 
-        const blade = new THREE.Mesh(new THREE.BoxGeometry(bladeW, bladeLen, bladeD), mats.blade);
+        // Lâmina: largura em X (alinha com o guarda), espessura em Z
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(bladeD, bladeLen, bladeW), mats.blade);
         blade.position.y = 0.15 + bladeLen * 0.5;
         blade.castShadow = true;
         group.add(blade);
 
         const fuller = new THREE.Mesh(
-            new THREE.BoxGeometry(bladeW * 0.3, bladeLen * 0.85, bladeD + 0.02),
+            new THREE.BoxGeometry(bladeD * 0.35, bladeLen * 0.85, bladeW + 0.02),
             new THREE.MeshStandardMaterial({
                 color: c.blade, metalness: 0.95, roughness: 0.15,
                 emissive: c.emissive, emissiveIntensity: c.emi * 0.5
@@ -904,7 +957,7 @@
         fuller.position.y = blade.position.y;
         group.add(fuller);
 
-        const tip = new THREE.Mesh(new THREE.ConeGeometry(bladeD * 0.5, 0.32, 4), mats.blade);
+        const tip = new THREE.Mesh(new THREE.ConeGeometry(bladeD * 0.45, 0.32, 4), mats.blade);
         tip.position.y = 0.15 + bladeLen + 0.12;
         tip.rotation.y = Math.PI / 4;
         tip.castShadow = true;
@@ -941,7 +994,7 @@
 
         if (c.emi > 0) {
             const aura = new THREE.Mesh(
-                new THREE.BoxGeometry(bladeW + 0.05, bladeLen * 0.9, 0.05),
+                new THREE.BoxGeometry(bladeD + 0.05, bladeLen * 0.9, 0.05),
                 new THREE.MeshStandardMaterial({
                     color: c.emissive, emissive: c.emissive, emissiveIntensity: 0.8,
                     transparent: true, opacity: 0.35, depthWrite: false
@@ -955,60 +1008,517 @@
     }
 
     function _buildAxeMesh(def, c) {
+        // Roteia para diferentes variações de machado baseado no estilo
+        const style = (def.style || 'iron').toLowerCase();
+        let group;
+        switch (style) {
+            case 'wood':
+                group = _buildAxeWoodcutter(def, c);
+                break;
+            case 'berserker':
+                group = _buildAxeBerserker(def, c);
+                break;
+            case 'flame':
+            case 'inferno':
+                group = _buildAxeFlame(def, c);
+                break;
+            case 'frost':
+                group = _buildAxeFrost(def, c);
+                break;
+            case 'shadow':
+                group = _buildAxeShadow(def, c);
+                break;
+            case 'crystal':
+                group = _buildAxeCrystal(def, c);
+                break;
+            default:
+                group = _buildAxeStandard(def, c);
+                break;
+        }
+        // Lâmina apontando para a direita (espelha no eixo X)
+        if (group) group.scale.x = -Math.abs(group.scale.x || 1);
+        return group;
+    }
+
+    /** Machado padrão - base para todos os tipos */
+    function _buildAxeStandard(def, c) {
         const mats = _stdMats(c);
         const group = new THREE.Group();
-        const shaftLen = 1.55;
-        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, shaftLen, 8), mats.hilt);
-        shaft.position.y = shaftLen * 0.35;
-        shaft.castShadow = true;
-        group.add(shaft);
 
-        // Axe head
-        const head = new THREE.Mesh(
-            new THREE.BoxGeometry(0.55, 0.35, 0.12),
-            mats.blade
-        );
-        head.position.set(0.22, shaftLen * 0.85, 0);
-        head.castShadow = true;
-        group.add(head);
+        // ===== CABO (handle) =====
+        const handleGeo = new THREE.CylinderGeometry(0.055, 0.07, 2.6, 16);
+        const handle = new THREE.Mesh(handleGeo, mats.hilt);
+        handle.position.y = 0.1;
+        handle.castShadow = true;
+        handle.receiveShadow = true;
+        group.add(handle);
 
-        // Blade curve (wedge)
-        const blade = new THREE.Mesh(
-            new THREE.ConeGeometry(0.22, 0.4, 4),
-            mats.blade
+        // Anéis de reforço no cabo
+        const addRing = (y, radius = 0.078) => {
+            const ring = new THREE.Mesh(
+                new THREE.TorusGeometry(radius, 0.012, 10, 24),
+                mats.guard
+            );
+            ring.rotation.x = Math.PI / 2;
+            ring.position.y = y;
+            ring.castShadow = true;
+            group.add(ring);
+        };
+        addRing(1.15);
+        addRing(0.95);
+        addRing(-0.95);
+        addRing(-1.15);
+
+        // Empunhadura de couro
+        const gripGeo = new THREE.CylinderGeometry(0.072, 0.072, 0.55, 16);
+        const grip = new THREE.Mesh(gripGeo, mats.hilt);
+        grip.position.y = -0.55;
+        grip.castShadow = true;
+        group.add(grip);
+
+        // Topo do cabo
+        const topCap = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.08, 0.065, 0.12, 12),
+            mats.hilt
         );
-        blade.rotation.z = Math.PI / 2;
-        blade.position.set(0.48, shaftLen * 0.85, 0);
+        topCap.position.y = 1.38;
+        topCap.castShadow = true;
+        group.add(topCap);
+
+        // ===== LÂMINA (blade) =====
+        const bladeShape = new THREE.Shape();
+        bladeShape.moveTo(0, 0);
+        bladeShape.lineTo(0.08, -0.18);
+        bladeShape.lineTo(0.85, -0.15);
+        bladeShape.lineTo(1.0, 0.08);
+        bladeShape.lineTo(0.85, 0.31);
+        bladeShape.lineTo(0.08, 0.28);
+        bladeShape.closePath();
+
+        const extrudeSettings = {
+            steps: 1,
+            depth: 0.09,
+            bevelEnabled: true,
+            bevelThickness: 0.018,
+            bevelSize: 0.015,
+            bevelSegments: 3,
+        };
+
+        const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, extrudeSettings);
+        bladeGeo.center();
+
+        const blade = new THREE.Mesh(bladeGeo, mats.blade);
+        blade.position.set(0.38, 1.25, 0);
         blade.castShadow = true;
+        blade.receiveShadow = true;
         group.add(blade);
 
-        // Spike opposite
-        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.22, 6), mats.guard);
-        spike.rotation.z = -Math.PI / 2;
-        spike.position.set(-0.12, shaftLen * 0.85, 0);
-        group.add(spike);
+        // Fio da lâmina (borda afiada)
+        const edgeShape = new THREE.Shape();
+        edgeShape.moveTo(0, 0);
+        edgeShape.lineTo(0.03, -0.16);
+        edgeShape.lineTo(0.9, -0.13);
+        edgeShape.lineTo(0.95, 0.08);
+        edgeShape.lineTo(0.9, 0.29);
+        edgeShape.lineTo(0.03, 0.26);
+        edgeShape.closePath();
 
-        // Top spike
-        const top = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.18, 6), mats.guard);
-        top.position.set(0.05, shaftLen * 0.85 + 0.22, 0);
-        group.add(top);
+        const edgeGeo = new THREE.ExtrudeGeometry(edgeShape, {
+            depth: 0.012,
+            bevelEnabled: false,
+        });
+        edgeGeo.center();
 
-        // Pommel
-        const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), mats.guard);
-        pommel.position.y = -0.15;
-        group.add(pommel);
+        const edge = new THREE.Mesh(edgeGeo, mats.blade);
+        edge.position.set(0.52, 1.25, 0);
+        edge.castShadow = true;
+        group.add(edge);
 
+        // ===== SOCKET (onde cabo entra na lâmina) =====
+        const socket = new THREE.Mesh(
+            new THREE.BoxGeometry(0.16, 0.28, 0.14),
+            mats.guard
+        );
+        socket.position.set(0.02, 1.28, 0);
+        socket.castShadow = true;
+        group.add(socket);
+
+        // Anel de reforço do socket
+        const socketRing = new THREE.Mesh(
+            new THREE.TorusGeometry(0.095, 0.018, 10, 20),
+            mats.blade
+        );
+        socketRing.rotation.x = Math.PI / 2;
+        socketRing.position.set(0.02, 1.28, 0);
+        group.add(socketRing);
+
+        // ===== PONTA DO CABO (butt) =====
+        const butt = new THREE.Mesh(
+            new THREE.SphereGeometry(0.08, 12, 10),
+            mats.guard
+        );
+        butt.position.y = -1.25;
+        butt.scale.set(1, 0.7, 1);
+        butt.castShadow = true;
+        group.add(butt);
+
+        // ===== STUDS DECORATIVOS =====
+        const addStud = (y, angle) => {
+            const stud = new THREE.Mesh(
+                new THREE.SphereGeometry(0.018, 8, 6),
+                mats.blade
+            );
+            stud.position.set(
+                Math.cos(angle) * 0.068,
+                y,
+                Math.sin(angle) * 0.068
+            );
+            group.add(stud);
+        };
+        for (let i = 0; i < 6; i++) {
+            addStud(-0.4, (i / 6) * Math.PI * 2);
+            addStud(-0.7, (i / 6) * Math.PI * 2 + 0.3);
+        }
+
+        // Aura de efeito especial (se houver)
         if (c.emi > 0) {
             const aura = new THREE.Mesh(
-                new THREE.BoxGeometry(0.5, 0.3, 0.04),
+                new THREE.BoxGeometry(0.6, 0.4, 0.15),
                 new THREE.MeshStandardMaterial({
                     color: c.emissive, emissive: c.emissive, emissiveIntensity: 0.7,
                     transparent: true, opacity: 0.3, depthWrite: false
                 })
             );
-            aura.position.copy(head.position);
+            aura.position.set(0.38, 1.25, 0);
             group.add(aura);
         }
+        return group;
+    }
+
+    /** Machado de Lenhador - maior, mais rústico */
+    function _buildAxeWoodcutter(def, c) {
+        const mats = _stdMats(c);
+        const group = new THREE.Group();
+
+        const handleGeo = new THREE.CylinderGeometry(0.048, 0.065, 2.8, 14);
+        const handle = new THREE.Mesh(handleGeo, mats.hilt);
+        handle.position.y = 0.05;
+        handle.castShadow = true;
+        group.add(handle);
+
+        // Lâmina maior e mais larga
+        const bladeShape = new THREE.Shape();
+        bladeShape.moveTo(0, 0);
+        bladeShape.lineTo(0.10, -0.22);
+        bladeShape.lineTo(0.95, -0.18);
+        bladeShape.lineTo(1.1, 0.10);
+        bladeShape.lineTo(0.95, 0.38);
+        bladeShape.lineTo(0.10, 0.34);
+        bladeShape.closePath();
+
+        const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, {
+            steps: 1, depth: 0.11, bevelEnabled: true,
+            bevelThickness: 0.02, bevelSize: 0.018, bevelSegments: 3,
+        });
+        bladeGeo.center();
+
+        const blade = new THREE.Mesh(bladeGeo, mats.blade);
+        blade.position.set(0.35, 1.3, 0);
+        blade.castShadow = true;
+        group.add(blade);
+
+        // Fio mais grosso
+        const edgeShape = new THREE.Shape();
+        edgeShape.moveTo(0, 0);
+        edgeShape.lineTo(0.05, -0.20);
+        edgeShape.lineTo(0.92, -0.16);
+        edgeShape.lineTo(1.05, 0.10);
+        edgeShape.lineTo(0.92, 0.36);
+        edgeShape.lineTo(0.05, 0.32);
+        edgeShape.closePath();
+
+        const edgeGeo = new THREE.ExtrudeGeometry(edgeShape, {
+            depth: 0.015, bevelEnabled: false,
+        });
+        edgeGeo.center();
+
+        const edge = new THREE.Mesh(edgeGeo, mats.blade);
+        edge.position.set(0.48, 1.3, 0);
+        group.add(edge);
+
+        // Socket maior
+        const socket = new THREE.Mesh(
+            new THREE.BoxGeometry(0.18, 0.32, 0.15),
+            mats.guard
+        );
+        socket.position.set(0.0, 1.32, 0);
+        group.add(socket);
+
+        const butt = new THREE.Mesh(
+            new THREE.SphereGeometry(0.09, 10, 8),
+            mats.guard
+        );
+        butt.position.y = -1.3;
+        butt.scale.set(1, 0.65, 1);
+        group.add(butt);
+
+        if (c.emi > 0) {
+            const aura = new THREE.Mesh(
+                new THREE.BoxGeometry(0.7, 0.5, 0.18),
+                new THREE.MeshStandardMaterial({
+                    color: c.emissive, emissive: c.emissive, emissiveIntensity: 0.6,
+                    transparent: true, opacity: 0.25, depthWrite: false
+                })
+            );
+            aura.position.set(0.35, 1.3, 0);
+            group.add(aura);
+        }
+        return group;
+    }
+
+    /** Machado do Berserker - mais agressivo, espinhos */
+    function _buildAxeBerserker(def, c) {
+        const mats = _stdMats(c);
+        const group = new THREE.Group();
+
+        const handleGeo = new THREE.CylinderGeometry(0.06, 0.075, 2.5, 18);
+        const handle = new THREE.Mesh(handleGeo, mats.hilt);
+        handle.position.y = 0.15;
+        handle.castShadow = true;
+        group.add(handle);
+
+        // Anéis mais numerosos
+        const addRing = (y, radius = 0.085) => {
+            const ring = new THREE.Mesh(
+                new THREE.TorusGeometry(radius, 0.015, 10, 24),
+                mats.guard
+            );
+            ring.rotation.x = Math.PI / 2;
+            ring.position.y = y;
+            group.add(ring);
+        };
+        addRing(1.1);
+        addRing(0.8);
+        addRing(0.5);
+        addRing(-0.5);
+        addRing(-0.8);
+        addRing(-1.1);
+
+        // Lâmina mais agressiva com picos
+        const bladeShape = new THREE.Shape();
+        bladeShape.moveTo(0, 0);
+        bladeShape.lineTo(0.06, -0.20);
+        bladeShape.lineTo(0.88, -0.16);
+        bladeShape.lineTo(1.05, 0.08);
+        bladeShape.lineTo(0.88, 0.32);
+        bladeShape.lineTo(0.06, 0.28);
+        bladeShape.closePath();
+
+        const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, {
+            steps: 1, depth: 0.1, bevelEnabled: true,
+            bevelThickness: 0.02, bevelSize: 0.016, bevelSegments: 4,
+        });
+        bladeGeo.center();
+
+        const blade = new THREE.Mesh(bladeGeo, mats.blade);
+        blade.position.set(0.4, 1.25, 0);
+        blade.castShadow = true;
+        group.add(blade);
+
+        // Espinhos na lâmina
+        for (let i = 0; i < 4; i++) {
+            const spike = new THREE.Mesh(
+                new THREE.ConeGeometry(0.04, 0.12, 5),
+                mats.guard
+            );
+            spike.position.set(0.3 + i * 0.15, 1.6, 0);
+            spike.rotation.z = Math.PI / 2;
+            group.add(spike);
+        }
+
+        const grip = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.075, 0.075, 0.6, 18),
+            mats.hilt
+        );
+        grip.position.y = -0.5;
+        group.add(grip);
+
+        const butt = new THREE.Mesh(
+            new THREE.SphereGeometry(0.085, 12, 10),
+            mats.guard
+        );
+        butt.position.y = -1.3;
+        butt.scale.set(1, 0.8, 1);
+        group.add(butt);
+
+        if (c.emi > 0) {
+            const aura = new THREE.Mesh(
+                new THREE.BoxGeometry(0.65, 0.45, 0.16),
+                new THREE.MeshStandardMaterial({
+                    color: c.emissive, emissive: c.emissive, emissiveIntensity: 0.8,
+                    transparent: true, opacity: 0.35, depthWrite: false
+                })
+            );
+            aura.position.set(0.4, 1.25, 0);
+            group.add(aura);
+        }
+        return group;
+    }
+
+    /** Machado Flamejante - com efeito de chamas */
+    function _buildAxeFlame(def, c) {
+        const baseAxe = _buildAxeStandard(def, c);
+        
+        // Adiciona cilindros flutuantes para simular chamas
+        const flameColors = [0xff6600, 0xff8800, 0xffaa00];
+        for (let i = 0; i < 3; i++) {
+            const flame = new THREE.Mesh(
+                new THREE.ConeGeometry(0.08 - i * 0.02, 0.25 + i * 0.1, 6),
+                new THREE.MeshStandardMaterial({
+                    color: flameColors[i],
+                    emissive: flameColors[i],
+                    emissiveIntensity: 0.8 - i * 0.2,
+                    transparent: true,
+                    opacity: 0.7 - i * 0.2
+                })
+            );
+            flame.position.set(0.38 + i * 0.08, 1.25 + i * 0.05, Math.sin(i) * 0.1);
+            flame.castShadow = true;
+            baseAxe.add(flame);
+        }
+        
+        return baseAxe;
+    }
+
+    /** Machado de Gelo - com cristais de gelo */
+    function _buildAxeFrost(def, c) {
+        const baseAxe = _buildAxeStandard(def, c);
+        
+        // Cristais de gelo ao redor
+        const crystalGeo = new THREE.IcosahedronGeometry(0.06, 2);
+        const crystalMat = new THREE.MeshStandardMaterial({
+            color: 0x88ccff,
+            emissive: 0x4488ff,
+            emissiveIntensity: 0.4,
+            metalness: 0.6,
+            roughness: 0.2
+        });
+        
+        for (let i = 0; i < 4; i++) {
+            const crystal = new THREE.Mesh(crystalGeo, crystalMat);
+            const angle = (i / 4) * Math.PI * 2;
+            crystal.position.set(
+                0.38 + Math.cos(angle) * 0.15,
+                1.25 + (i % 2) * 0.1,
+                Math.sin(angle) * 0.15
+            );
+            crystal.castShadow = true;
+            baseAxe.add(crystal);
+        }
+        
+        return baseAxe;
+    }
+
+    /** Machado das Sombras - aspecto sombrio */
+    function _buildAxeShadow(def, c) {
+        const baseAxe = _buildAxeStandard(def, c);
+        
+        // Aura sombria
+        const shadowAura = new THREE.Mesh(
+            new THREE.BoxGeometry(0.65, 0.45, 0.2),
+            new THREE.MeshStandardMaterial({
+                color: 0x2a1a2a,
+                emissive: 0x4a2a4a,
+                emissiveIntensity: 0.5,
+                transparent: true,
+                opacity: 0.4,
+                depthWrite: false
+            })
+        );
+        shadowAura.position.set(0.38, 1.25, 0);
+        baseAxe.add(shadowAura);
+        
+        return baseAxe;
+    }
+
+    /** Machado de Cristal - aspecto cristalino */
+    function _buildAxeCrystal(def, c) {
+        const mats = _stdMats(c);
+        const group = new THREE.Group();
+
+        const handleGeo = new THREE.CylinderGeometry(0.055, 0.07, 2.6, 16);
+        const handle = new THREE.Mesh(handleGeo, mats.hilt);
+        handle.position.y = 0.1;
+        group.add(handle);
+
+        // Lâmina cristalina
+        const bladeShape = new THREE.Shape();
+        bladeShape.moveTo(0, 0);
+        bladeShape.lineTo(0.08, -0.18);
+        bladeShape.lineTo(0.85, -0.15);
+        bladeShape.lineTo(1.0, 0.08);
+        bladeShape.lineTo(0.85, 0.31);
+        bladeShape.lineTo(0.08, 0.28);
+        bladeShape.closePath();
+
+        const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, {
+            steps: 1, depth: 0.09, bevelEnabled: true,
+            bevelThickness: 0.018, bevelSize: 0.015, bevelSegments: 3,
+        });
+        bladeGeo.center();
+
+        const crystalMat = new THREE.MeshStandardMaterial({
+            color: 0xaaffff,
+            emissive: 0x55ddff,
+            emissiveIntensity: 0.6,
+            metalness: 0.4,
+            roughness: 0.1,
+            transparent: true,
+            opacity: 0.9
+        });
+
+        const blade = new THREE.Mesh(bladeGeo, crystalMat);
+        blade.position.set(0.38, 1.25, 0);
+        blade.castShadow = true;
+        group.add(blade);
+
+        // Socket metálico
+        const socket = new THREE.Mesh(
+            new THREE.BoxGeometry(0.16, 0.28, 0.14),
+            mats.guard
+        );
+        socket.position.set(0.02, 1.28, 0);
+        group.add(socket);
+
+        const socketRing = new THREE.Mesh(
+            new THREE.TorusGeometry(0.095, 0.018, 10, 20),
+            mats.guard
+        );
+        socketRing.rotation.x = Math.PI / 2;
+        socketRing.position.set(0.02, 1.28, 0);
+        group.add(socketRing);
+
+        const butt = new THREE.Mesh(
+            new THREE.SphereGeometry(0.08, 12, 10),
+            mats.guard
+        );
+        butt.position.y = -1.25;
+        butt.scale.set(1, 0.7, 1);
+        group.add(butt);
+
+        // Cristais decorativos
+        const crystalGeo = new THREE.OctahedronGeometry(0.04, 1);
+        for (let i = 0; i < 5; i++) {
+            const crystal = new THREE.Mesh(crystalGeo, crystalMat);
+            const angle = (i / 5) * Math.PI * 2;
+            crystal.position.set(
+                0.38 + Math.cos(angle) * 0.2,
+                1.25,
+                Math.sin(angle) * 0.2
+            );
+            group.add(crystal);
+        }
+
         return group;
     }
 
@@ -1170,7 +1680,8 @@
         const group = new THREE.Group();
         const bladeLen = 0.75;
 
-        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.05, bladeLen, 0.12), mats.blade);
+        // Lâmina: largura em X (alinha com o guarda), espessura em Z
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.12, bladeLen, 0.05), mats.blade);
         blade.position.y = 0.1 + bladeLen * 0.5;
         blade.castShadow = true;
         group.add(blade);

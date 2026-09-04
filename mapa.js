@@ -377,6 +377,126 @@
             return mesh;
         }
 
+
+        /** Textura de tijolos antigos / desgastados para muralhas */
+        _createOldBrickTexture(size = 256) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Argamassa escura e suja
+            ctx.fillStyle = '#4a433c';
+            ctx.fillRect(0, 0, size, size);
+
+            const brickW = 36;
+            const brickH = 16;
+            const mortar = 3;
+
+            for (let row = 0; row < size / brickH + 1; row++) {
+                const offset = (row % 2) * (brickW / 2);
+                for (let col = -1; col < size / brickW + 2; col++) {
+                    const bx = col * brickW + offset;
+                    const by = row * brickH;
+
+                    // Cores de tijolo antigo (marrom-avermelhado desbotado, com variação)
+                    const shade = 0.65 + Math.random() * 0.4;
+                    const r = Math.floor((110 + Math.random() * 50) * shade);
+                    const g = Math.floor((55 + Math.random() * 30) * shade);
+                    const b = Math.floor((40 + Math.random() * 20) * shade);
+                    ctx.fillStyle = `rgb(${r},${g},${b})`;
+                    ctx.fillRect(bx + mortar / 2, by + mortar / 2, brickW - mortar, brickH - mortar);
+
+                    // Desgaste / manchas escuras
+                    if (Math.random() > 0.55) {
+                        ctx.fillStyle = `rgba(20,12,8,${0.08 + Math.random() * 0.18})`;
+                        ctx.fillRect(
+                            bx + mortar + Math.random() * 10,
+                            by + mortar + Math.random() * 6,
+                            4 + Math.random() * 12,
+                            2 + Math.random() * 5
+                        );
+                    }
+                    // Highlight sutil no topo do tijolo
+                    ctx.fillStyle = `rgba(220,180,140,${0.04 + Math.random() * 0.06})`;
+                    ctx.fillRect(bx + mortar / 2, by + mortar / 2, brickW - mortar, 1.5);
+                }
+            }
+
+            // Ruído geral de idade
+            const imgData = ctx.getImageData(0, 0, size, size);
+            const data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const n = (Math.random() - 0.5) * 22;
+                data[i]     = Math.min(255, Math.max(0, data[i] + n));
+                data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + n * 0.7));
+                data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + n * 0.5));
+            }
+            ctx.putImageData(imgData, 0, 0);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(2.2, 1.4);
+            tex.anisotropy = 4;
+            return tex;
+        }
+
+        /** Textura de madeira para portões */
+        _createWoodPlankTexture(size = 256) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Base madeira escura
+            ctx.fillStyle = '#3e2a1f';
+            ctx.fillRect(0, 0, size, size);
+
+            const plankH = 28;
+            for (let y = 0; y < size; y += plankH) {
+                // Variação de tom por tábua
+                const shade = 0.75 + Math.random() * 0.35;
+                const r = Math.floor(72 * shade);
+                const g = Math.floor(48 * shade);
+                const b = Math.floor(32 * shade);
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                ctx.fillRect(0, y + 1, size, plankH - 2);
+
+                // Linhas de grão
+                for (let i = 0; i < 5; i++) {
+                    const gx = Math.random() * size;
+                    ctx.strokeStyle = `rgba(20,12,8,${0.15 + Math.random() * 0.2})`;
+                    ctx.lineWidth = 1 + Math.random();
+                    ctx.beginPath();
+                    ctx.moveTo(gx, y + 2);
+                    ctx.lineTo(gx + (Math.random() - 0.5) * 40, y + plankH - 2);
+                    ctx.stroke();
+                }
+
+                // Junta entre tábuas (mais escura)
+                ctx.fillStyle = 'rgba(15,10,6,0.55)';
+                ctx.fillRect(0, y, size, 2);
+            }
+
+            // Pregos / detalhes
+            for (let i = 0; i < 18; i++) {
+                const px = 20 + Math.random() * (size - 40);
+                const py = Math.floor(Math.random() * (size / plankH)) * plankH + plankH / 2;
+                ctx.fillStyle = 'rgba(30,25,20,0.7)';
+                ctx.beginPath();
+                ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(1.5, 2.5);
+            tex.anisotropy = 4;
+            return tex;
+        }
+
         // --- Muralha perimetral — topo alinhado em todas as seções ---
         async _buildPerimeterWalls() {
             const {
@@ -401,31 +521,49 @@
             this.cfg.wallInnerR = R - T * 0.55;
             this.cfg.wallOuterR = R + T * 0.55;
 
+            const brickTex = this._createOldBrickTexture(256);
+            const woodTex = this._createWoodPlankTexture(256);
+
             const wallMat = new THREE.MeshStandardMaterial({
-                color: 0x6b7280,
-                roughness: 0.92,
-                metalness: 0.08
+                map: brickTex,
+                bumpMap: brickTex,
+                bumpScale: 0.04,
+                color: 0xc4a090,
+                roughness: 0.9,
+                metalness: 0.04
             });
             const trimMat = new THREE.MeshStandardMaterial({
-                color: 0x4b5563,
-                roughness: 0.85,
-                metalness: 0.15
+                map: brickTex,
+                bumpMap: brickTex,
+                bumpScale: 0.03,
+                color: 0x8a7060,
+                roughness: 0.88,
+                metalness: 0.06
             });
             const woodMat = new THREE.MeshStandardMaterial({
-                color: 0x5c3d2e,
-                roughness: 0.8,
-                metalness: 0.05
+                map: woodTex,
+                bumpMap: woodTex,
+                bumpScale: 0.035,
+                color: 0xb89070,
+                roughness: 0.82,
+                metalness: 0.03
             });
             // Madeira mais escura / pedra para o portão do castelo
             const castleWoodMat = new THREE.MeshStandardMaterial({
-                color: 0x3f3f46,
-                roughness: 0.85,
-                metalness: 0.08
+                map: woodTex,
+                bumpMap: woodTex,
+                bumpScale: 0.03,
+                color: 0x6a5a4a,
+                roughness: 0.86,
+                metalness: 0.05
             });
             const castleTrimMat = new THREE.MeshStandardMaterial({
-                color: 0x52525b,
-                roughness: 0.88,
-                metalness: 0.12
+                map: brickTex,
+                bumpMap: brickTex,
+                bumpScale: 0.025,
+                color: 0x7a6a5a,
+                roughness: 0.9,
+                metalness: 0.06
             });
 
             const wallGroup = new THREE.Group();
@@ -721,6 +859,7 @@
         // --- Rochas instanciadas ---
         async _buildRocks() {
             const count = this.cfg.rockCount;
+            const waterLevel = this.cfg.waterLevel;
             const rockGeo = new THREE.DodecahedronGeometry(0.9, 0);
             const rockMat = new THREE.MeshStandardMaterial({ color: 0x616161, roughness: 0.92 });
             const rockInst = new THREE.InstancedMesh(rockGeo, rockMat, count);
@@ -728,7 +867,7 @@
             rockInst.name = 'rocks';
 
             let n = 0;
-            const attempts = count * 2.5;
+            const attempts = count * 6;
 
             for (let i = 0; i < attempts && n < count; i++) {
                 const rx = (Math.random() - 0.5) * 270;
@@ -738,6 +877,9 @@
                 if (dist > this.cfg.wallRadius - 6 && dist < this.cfg.wallRadius + 8) continue;
 
                 const ry = this.getTerrainHeight(rx, rz);
+                // Só em solo seco (fora da água)
+                if (ry < waterLevel + 0.45) continue;
+
                 const s = 0.7 + Math.random() * 1.4;
 
                 _dummy.position.set(rx, ry + s * 0.35, rz);
@@ -1034,42 +1176,405 @@
             return group;
         }
 
-        // --- Cristais e baús ---
-        _initCollectibles() {
-            const crystalGeo = new THREE.OctahedronGeometry(0.75, 0);
-            const crystalMat = new THREE.MeshStandardMaterial({
-                color: 0x00f0ff,
-                emissive: 0x00aaff,
-                emissiveIntensity: 0.55,
-                roughness: 0.2
+        /**
+         * Erva medicinal detalhada: caule, folhas lanceoladas, flores
+         * e brilho mágico suave (missão da Curandeira).
+         * @param {number} scale
+         * @returns {THREE.Group}
+         */
+        _createMedicinalHerb(scale = 1) {
+            const s = scale;
+            const group = new THREE.Group();
+            group.name = 'medicinal_herb';
+
+            const stemMat = new THREE.MeshStandardMaterial({
+                color: 0x3f7a2e,
+                roughness: 0.85,
+                metalness: 0.02
+            });
+            const leafMat = new THREE.MeshStandardMaterial({
+                color: 0x22c55e,
+                emissive: 0x14532d,
+                emissiveIntensity: 0.18,
+                roughness: 0.72,
+                metalness: 0.0,
+                side: THREE.DoubleSide
+            });
+            const leafDarkMat = new THREE.MeshStandardMaterial({
+                color: 0x166534,
+                emissive: 0x052e16,
+                emissiveIntensity: 0.12,
+                roughness: 0.8,
+                side: THREE.DoubleSide
+            });
+            const flowerMat = new THREE.MeshStandardMaterial({
+                color: 0xa3e635,
+                emissive: 0x65a30d,
+                emissiveIntensity: 0.45,
+                roughness: 0.4,
+                metalness: 0.05
+            });
+            const berryMat = new THREE.MeshStandardMaterial({
+                color: 0xf472b6,
+                emissive: 0xdb2777,
+                emissiveIntensity: 0.25,
+                roughness: 0.4
             });
 
+            // Caule principal
+            const stem = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.035 * s, 0.055 * s, 0.95 * s, 6),
+                stemMat
+            );
+            stem.position.y = 0.48 * s;
+            stem.rotation.z = 0.06;
+            stem.castShadow = true;
+            group.add(stem);
+
+            // Ramificação
+            const stem2 = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.022 * s, 0.032 * s, 0.42 * s, 5),
+                stemMat
+            );
+            stem2.position.set(0.12 * s, 0.72 * s, 0.02 * s);
+            stem2.rotation.z = -0.55;
+            stem2.rotation.x = 0.15;
+            stem2.castShadow = true;
+            group.add(stem2);
+
+            // Folha lanceolada
+            const makeLeaf = (w, h, mat) => {
+                const shape = new THREE.Shape();
+                shape.moveTo(0, 0);
+                shape.quadraticCurveTo(w * 0.55, h * 0.25, w * 0.48, h * 0.55);
+                shape.quadraticCurveTo(w * 0.22, h * 0.92, 0, h);
+                shape.quadraticCurveTo(-w * 0.22, h * 0.92, -w * 0.48, h * 0.55);
+                shape.quadraticCurveTo(-w * 0.55, h * 0.25, 0, 0);
+                const geo = new THREE.ShapeGeometry(shape);
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                return mesh;
+            };
+
+            const leafPositions = [
+                // x, y, z, rotY, rotX, rotZ, scale, dark
+                [0.18, 0.28, 0.05, 0.9, -0.55, 0.25, 0.85, false],
+                [-0.16, 0.35, -0.08, -1.1, -0.5, -0.3, 0.9, true],
+                [0.14, 0.52, 0.1, 1.4, -0.65, 0.15, 0.75, false],
+                [-0.2, 0.58, 0.02, -0.7, -0.7, -0.2, 0.8, false],
+                [0.08, 0.75, -0.12, 2.1, -0.45, 0.35, 0.7, true],
+                [-0.1, 0.82, 0.08, -2.3, -0.55, -0.25, 0.65, false],
+                [0.22, 0.68, -0.05, 0.4, -0.8, 0.4, 0.6, true],
+                [0.05, 0.95, 0.0, 0.0, -0.35, 0.1, 0.55, false]
+            ];
+
+            leafPositions.forEach(([x, y, z, ry, rx, rz, sc, dark]) => {
+                const leaf = makeLeaf(0.22 * s * sc, 0.38 * s * sc, dark ? leafDarkMat : leafMat);
+                leaf.position.set(x * s, y * s, z * s);
+                leaf.rotation.set(rx, ry, rz);
+                group.add(leaf);
+            });
+
+            // Flores / botões no topo
+            const flowerPositions = [
+                [0.02, 1.05, 0.0, 1.0],
+                [0.28, 0.88, 0.04, 0.75],
+                [-0.12, 0.98, -0.06, 0.7],
+                [0.15, 0.78, 0.12, 0.55]
+            ];
+            flowerPositions.forEach(([x, y, z, sc]) => {
+                const center = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.045 * s * sc, 6, 5),
+                    flowerMat
+                );
+                center.position.set(x * s, y * s, z * s);
+                group.add(center);
+                for (let p = 0; p < 5; p++) {
+                    const ang = (p / 5) * Math.PI * 2;
+                    const petal = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.038 * s * sc, 5, 4),
+                        flowerMat
+                    );
+                    petal.position.set(
+                        x * s + Math.cos(ang) * 0.055 * s * sc,
+                        y * s + 0.01 * s,
+                        z * s + Math.sin(ang) * 0.055 * s * sc
+                    );
+                    petal.scale.set(1, 0.55, 1);
+                    group.add(petal);
+                }
+            });
+
+            // Bagas rosa (detalhe medicinal)
+            const berryPositions = [
+                [0.1, 0.62, -0.1],
+                [-0.18, 0.48, 0.06],
+                [0.2, 0.4, 0.08]
+            ];
+            berryPositions.forEach(([x, y, z]) => {
+                const berry = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.032 * s, 6, 5),
+                    berryMat
+                );
+                berry.position.set(x * s, y * s, z * s);
+                berry.castShadow = true;
+                group.add(berry);
+            });
+
+            // Base de terra
+            const base = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.12 * s, 0.16 * s, 0.08 * s, 7),
+                new THREE.MeshStandardMaterial({
+                    color: 0x5c4033,
+                    roughness: 0.95
+                })
+            );
+            base.position.y = 0.03 * s;
+            group.add(base);
+
+            group.userData = {
+                type: 'herb',
+                baseY: 0
+            };
+            return group;
+        }
+
+        /**
+         * Cristal místico com núcleo + 2–3 fragmentos laterais (detalhe moderado).
+         * @param {number} scale
+         * @returns {THREE.Group}
+         */
+        _createCrystal(scale = 1) {
+            const s = scale;
+            const group = new THREE.Group();
+            group.name = 'mystic_crystal';
+
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0x22d3ee,
+                emissive: 0x0891b2,
+                emissiveIntensity: 0.5,
+                roughness: 0.18,
+                metalness: 0.15,
+                transparent: true,
+                opacity: 0.92
+            });
+            const matDark = new THREE.MeshStandardMaterial({
+                color: 0x0e7490,
+                emissive: 0x155e75,
+                emissiveIntensity: 0.35,
+                roughness: 0.25,
+                metalness: 0.2
+            });
+
+            // Núcleo principal
+            const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.55 * s, 0), mat);
+            core.position.y = 0.55 * s;
+            core.rotation.y = 0.4;
+            core.castShadow = true;
+            group.add(core);
+
+            // Fragmento alto fino
+            const tip = new THREE.Mesh(new THREE.OctahedronGeometry(0.28 * s, 0), mat);
+            tip.position.set(0.12 * s, 1.05 * s, -0.08 * s);
+            tip.scale.set(0.55, 1.15, 0.55);
+            tip.rotation.set(0.2, 0.8, 0.15);
+            tip.castShadow = true;
+            group.add(tip);
+
+            // Fragmentos laterais menores
+            const sideA = new THREE.Mesh(new THREE.OctahedronGeometry(0.22 * s, 0), matDark);
+            sideA.position.set(-0.32 * s, 0.42 * s, 0.1 * s);
+            sideA.scale.set(0.7, 0.9, 0.7);
+            sideA.rotation.set(-0.3, 1.2, 0.4);
+            group.add(sideA);
+
+            const sideB = new THREE.Mesh(new THREE.OctahedronGeometry(0.18 * s, 0), matDark);
+            sideB.position.set(0.28 * s, 0.35 * s, 0.18 * s);
+            sideB.scale.set(0.65, 0.8, 0.65);
+            sideB.rotation.set(0.25, -0.6, -0.2);
+            group.add(sideB);
+
+            // Base rochosa discreta
+            const base = new THREE.Mesh(
+                new THREE.DodecahedronGeometry(0.22 * s, 0),
+                new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9, metalness: 0.1 })
+            );
+            base.position.y = 0.08 * s;
+            base.scale.set(1.2, 0.55, 1.2);
+            group.add(base);
+
+            return group;
+        }
+
+        /**
+         * Minério: pedra principal + veios e fragmentos (detalhe moderado).
+         * @param {number} scale
+         * @returns {THREE.Group}
+         */
+        _createOre(scale = 1) {
+            const s = scale;
+            const group = new THREE.Group();
+            group.name = 'ore_rock';
+
+            const rockMat = new THREE.MeshStandardMaterial({
+                color: 0x78716c,
+                roughness: 0.88,
+                metalness: 0.15
+            });
+            const oreMat = new THREE.MeshStandardMaterial({
+                color: 0xd97706,
+                emissive: 0x92400e,
+                emissiveIntensity: 0.28,
+                roughness: 0.45,
+                metalness: 0.55
+            });
+            const veinMat = new THREE.MeshStandardMaterial({
+                color: 0xfbbf24,
+                emissive: 0xb45309,
+                emissiveIntensity: 0.2,
+                roughness: 0.4,
+                metalness: 0.6
+            });
+
+            // Pedra principal irregular
+            const main = new THREE.Mesh(new THREE.DodecahedronGeometry(0.42 * s, 0), rockMat);
+            main.position.y = 0.35 * s;
+            main.scale.set(1.15, 0.9, 1.05);
+            main.rotation.set(0.3, 0.5, -0.15);
+            main.castShadow = true;
+            group.add(main);
+
+            // Bloco de minério embutido
+            const chunk = new THREE.Mesh(new THREE.DodecahedronGeometry(0.22 * s, 0), oreMat);
+            chunk.position.set(0.12 * s, 0.42 * s, 0.18 * s);
+            chunk.scale.set(0.9, 0.75, 1.1);
+            chunk.rotation.set(-0.4, 1.1, 0.2);
+            chunk.castShadow = true;
+            group.add(chunk);
+
+            // Veio fino
+            const vein = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08 * s, 0.35 * s, 0.06 * s),
+                veinMat
+            );
+            vein.position.set(-0.15 * s, 0.4 * s, 0.05 * s);
+            vein.rotation.set(0.5, 0.3, 0.7);
+            group.add(vein);
+
+            // Fragmento menor ao lado
+            const bit = new THREE.Mesh(new THREE.DodecahedronGeometry(0.14 * s, 0), oreMat);
+            bit.position.set(-0.28 * s, 0.18 * s, -0.12 * s);
+            bit.rotation.set(0.6, -0.4, 0.3);
+            group.add(bit);
+
+            // Pedra de apoio
+            const support = new THREE.Mesh(new THREE.DodecahedronGeometry(0.18 * s, 0), rockMat);
+            support.position.set(0.2 * s, 0.12 * s, -0.2 * s);
+            support.scale.set(1, 0.6, 0.9);
+            group.add(support);
+
+            return group;
+        }
+
+        // --- Cristais, minérios, ervas e baús ---
+        _initCollectibles() {
+            // Posições em solo seco (acima da água). Rio ~ x=38; oeste costuma ser mais baixo.
+            const minDry = this.cfg.waterLevel + 0.55;
+            const isDry = (x, z) => this.getTerrainHeight(x, z) >= minDry;
+
             const coords = [
-                [42, 22], [-52, 38], [65, -55], [-38, -65], [28, 70]
+                [42, 22], [65, -55], [28, 70], [-25, 40], [80, 55]
             ];
 
             coords.forEach((pt, i) => {
-                const mesh = new THREE.Mesh(crystalGeo, crystalMat);
-                mesh.position.set(pt[0], this.getTerrainHeight(pt[0], pt[1]) + 1.1, pt[1]);
-                mesh.userData = {
+                let [x, z] = pt;
+                if (!isDry(x, z)) {
+                    // fallback: empurra para leste/sul até achar solo seco
+                    for (let t = 0; t < 20 && !isDry(x, z); t++) {
+                        x += 4; z -= 2;
+                    }
+                }
+                const crystal = this._createCrystal(1.0 + Math.random() * 0.15);
+                const gy = this.getTerrainHeight(x, z);
+                crystal.position.set(x, gy, z);
+                crystal.rotation.y = Math.random() * Math.PI * 2;
+                crystal.userData = {
                     id: 'crystal_' + i,
                     type: 'crystal',
                     name: 'Cristal Místico'
                 };
-                mesh.name = 'crystal_' + i;
-                this.scene.add(mesh);
-                this.collectibles.push(mesh);
+                crystal.name = 'crystal_' + i;
+                this.scene.add(crystal);
+                this.collectibles.push(crystal);
+                this._groups.push(crystal);
             });
 
-            // Baús de tesouro detalhados
+            // Minérios na floresta (para missão do Ferreiro) — só solo seco
+            const oreCoords = [
+                [35, 48], [55, -30], [-28, -48], [12, 62], [-65, -20], [75, -20]
+            ];
+            oreCoords.forEach((pt, i) => {
+                let [x, z] = pt;
+                if (!isDry(x, z)) {
+                    for (let t = 0; t < 20 && !isDry(x, z); t++) {
+                        x += 4; z -= 2;
+                    }
+                }
+                const ore = this._createOre(1.0 + Math.random() * 0.2);
+                const gy = this.getTerrainHeight(x, z);
+                ore.position.set(x, gy, z);
+                ore.rotation.y = Math.random() * Math.PI * 2;
+                ore.userData = {
+                    id: 'ore_' + i,
+                    type: 'ore',
+                    name: 'Minério'
+                };
+                ore.name = 'ore_' + i;
+                this.scene.add(ore);
+                this.collectibles.push(ore);
+                this._groups.push(ore);
+            });
+
+            // Ervas medicinais detalhadas na floresta (missão da Curandeira)
+            const herbCoords = [
+                [30, 35], [50, -42], [-22, -55], [8, 58], [-50, -30], [-80, -10]
+            ];
+            herbCoords.forEach((pt, i) => {
+                let [x, z] = pt;
+                if (!isDry(x, z)) {
+                    for (let t = 0; t < 20 && !isDry(x, z); t++) {
+                        x += 4; z -= 2;
+                    }
+                }
+                const herb = this._createMedicinalHerb(1.05 + Math.random() * 0.2);
+                const gy = this.getTerrainHeight(x, z);
+                herb.position.set(x, gy, z);
+                herb.rotation.y = Math.random() * Math.PI * 2;
+                herb.userData.id = 'herb_' + i;
+                herb.userData.type = 'herb';
+                herb.userData.name = 'Erva Medicinal';
+                herb.name = 'herb_' + i;
+                this.scene.add(herb);
+                this.collectibles.push(herb);
+                this._groups.push(herb);
+            });
+
+            // Baús de tesouro detalhados — solo seco
             const chestSpots = [
                 { x: 14, z: -78, id: 'ancient_chest' },
-                { x: -48, z: 55, id: 'forest_chest' }
+                { x: -65, z: 0, id: 'forest_chest' }
             ];
             for (const spot of chestSpots) {
+                let x = spot.x, z = spot.z;
+                if (!isDry(x, z)) {
+                    for (let t = 0; t < 20 && !isDry(x, z); t++) {
+                        x += 4; z -= 2;
+                    }
+                }
                 const chest = this._createTreasureChest(1.05);
-                const gy = this.getTerrainHeight(spot.x, spot.z);
-                chest.position.set(spot.x, gy, spot.z);
+                const gy = this.getTerrainHeight(x, z);
+                chest.position.set(x, gy, z);
                 chest.rotation.y = Math.random() * Math.PI * 2;
                 chest.name = spot.id;
                 chest.userData.id = spot.id;
@@ -1079,7 +1584,7 @@
                 this.scene.add(chest);
                 this.chests.push(chest);
                 this._groups.push(chest);
-                this.colliders.push({ x: spot.x, z: spot.z, radius: 1.4, type: 'chest' });
+                this.colliders.push({ x, z, radius: 1.4, type: 'chest' });
             }
         }
 
@@ -1133,16 +1638,19 @@
                 this._lamps.update(timeSec);
             }
 
-            // Cristais girando levemente
+            // Colecionáveis: cristais/minérios giram e flutuam levemente; ervas ficam fixas no chão
             for (let i = 0; i < this.collectibles.length; i++) {
                 const c = this.collectibles[i];
-                if (c && c.rotation) {
-                    c.rotation.y += 0.015;
-                    c.position.y =
-                        this.getTerrainHeight(c.position.x, c.position.z) +
-                        1.1 +
-                        Math.sin(timeSec * 2 + i) * 0.08;
-                }
+                if (!c || !c.rotation) continue;
+                const ctype = (c.userData && c.userData.type) || '';
+                if (ctype === 'herb') continue; // sem flutuação / pulsar
+
+                c.rotation.y += 0.012;
+                const baseLift = ctype === 'ore' ? 0.55 : 1.05;
+                c.position.y =
+                    this.getTerrainHeight(c.position.x, c.position.z) +
+                    baseLift +
+                    Math.sin(timeSec * 1.8 + i) * 0.06;
             }
         }
 

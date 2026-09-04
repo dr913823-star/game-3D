@@ -1049,7 +1049,10 @@
                     Game.showPopDamage?.(e.pos, dmg);
                     Game.spawnParticles?.(e.pos, 0xef4444, 6);
                 }
-                if (typeof Sound !== 'undefined') Sound.playHit?.();
+                if (typeof Sound !== 'undefined') {
+                    if (Sound.playEnemyHit) Sound.playEnemyHit(e.type);
+                    else Sound.playHit?.();
+                }
 
                 if (e.hp <= 0) {
                     const rewards = this._killEnemy(e);
@@ -1132,6 +1135,7 @@
                 }
             }
             this.enemies.length = 0;
+            if (this._pendingRespawns) this._pendingRespawns.length = 0;
         }
     }
 

@@ -622,7 +622,7 @@
                 Game.showPopDamage?.(boss.pos, dmg);
                 Game.spawnParticles?.(boss.pos, 0xef4444, 10);
             }
-            if (typeof Sound !== 'undefined') Sound.playHit?.();
+            if (typeof Sound !== 'undefined') { if (Sound.playEnemyHit) Sound.playEnemyHit('troll'); else Sound.playHit?.(); }
 
             let kills = [];
             if (boss.hp <= 0) {

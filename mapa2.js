@@ -26,7 +26,7 @@
         segments: 128,
         waterLevel: 0.35,
         treeCount: 200,
-        rockCount: 120,
+        rockCount: 0,
         bushCount: 180,
         herbCount: 280,
         flowerCount: 220,
@@ -222,8 +222,8 @@
             await progress(50, 'Plantando floresta densa...');
             await this._buildTrees();
 
-            await progress(70, 'Espalhando rochas e detalhes...');
-            await this._buildRocks();
+            await progress(70, 'Preparando vegetação...');
+            // Rochas decorativas removidas do Vale
 
             await progress(78, 'Plantando arbustos, ervas e flores...');
             await this._buildVegetation();
@@ -624,48 +624,219 @@
             }
         }
 
-        async _buildRuins() {
-            const ruinsGroup = new THREE.Group();
-            ruinsGroup.name = 'ruins_map2';
+        /**
+         * Estátua de Tijolos do Ladrão Petrificado (substitui a antiga estátua de pedra).
+         */
+        _createStoneManStatue(scale = 1) {
+            const s = scale;
+            const group = new THREE.Group();
+            group.name = 'brick_thief_statue';
 
-            const stoneMat = new THREE.MeshStandardMaterial({
-                color: 0x757575,
-                roughness: 0.94,
-                metalness: 0.04,
-                map: this._createStoneTexture(256)
+            const createBrickTex = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 256; canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#d4695d';
+                ctx.fillRect(0, 0, 256, 256);
+                const brickWidth = 48, brickHeight = 24;
+                for (let y = 0; y < 256; y += brickHeight) {
+                    const offset = (Math.floor(y / brickHeight) % 2) * (brickWidth / 2);
+                    for (let x = -brickWidth / 2; x < 256; x += brickWidth) {
+                        ctx.strokeStyle = '#8b4d45';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(x + offset, y, brickWidth, brickHeight);
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                        ctx.fillRect(x + offset, y, brickWidth, brickHeight);
+                    }
+                }
+                const imgData = ctx.getImageData(0, 0, 256, 256);
+                const data = imgData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    const noise = (Math.random() - 0.5) * 35;
+                    data[i] = Math.min(255, Math.max(0, data[i] + noise));
+                    data[i+1] = Math.min(255, Math.max(0, data[i+1] + noise * 0.7));
+                    data[i+2] = Math.min(255, Math.max(0, data[i+2] + noise * 0.5));
+                }
+                ctx.putImageData(imgData, 0, 0);
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(2.5, 2.5);
+                return texture;
+            };
+
+            const brickTex = createBrickTex();
+            const brickMat = new THREE.MeshStandardMaterial({
+                map: brickTex, bumpMap: brickTex, bumpScale: 0.03 * s,
+                roughness: 0.88, metalness: 0.0, color: 0xd4695d
+            });
+            const brickDarkMat = new THREE.MeshStandardMaterial({
+                map: brickTex, bumpMap: brickTex, bumpScale: 0.025 * s,
+                roughness: 0.9, metalness: 0.0, color: 0xa34f42
+            });
+            const pedraMat = new THREE.MeshStandardMaterial({
+                color: 0x7a8a94, roughness: 0.9, metalness: 0.0,
+                map: this._createStoneTexture(128)
+            });
+            const pedraDarkMat = new THREE.MeshStandardMaterial({
+                color: 0x6a7a84, roughness: 0.92, metalness: 0.0
+            });
+            const eyeMat = new THREE.MeshStandardMaterial({ color: 0x8a9a9a, roughness: 0.85 });
+            const pupilMat = new THREE.MeshBasicMaterial({ color: 0x4a5a5a });
+
+            const base = new THREE.Mesh(new THREE.BoxGeometry(1.7 * s, 0.32 * s, 1.7 * s), pedraDarkMat);
+            base.position.y = 0.16 * s; base.castShadow = true; base.receiveShadow = true;
+            group.add(base);
+
+            const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.58 * s, 0.68 * s, 0.4 * s, 12), pedraMat);
+            plinth.position.y = 0.52 * s; plinth.castShadow = true;
+            group.add(plinth);
+
+            const yOff = 0.75 * s;
+            const limbGeo = new THREE.CylinderGeometry(0.12 * s, 0.1 * s, 1.4 * s, 12);
+
+            const chest = new THREE.Mesh(new THREE.BoxGeometry(1.4 * s, 0.8 * s, 0.75 * s), brickMat);
+            chest.position.y = 2.8 * s + yOff; chest.castShadow = true; chest.receiveShadow = true;
+            group.add(chest);
+
+            const waist = new THREE.Mesh(new THREE.BoxGeometry(0.9 * s, 0.8 * s, 0.55 * s), brickMat);
+            waist.position.y = 2.0 * s + yOff; waist.castShadow = true; waist.receiveShadow = true;
+            group.add(waist);
+
+            const shirtMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.63 * s, 0.72 * s, 0.92 * s, 10), brickMat);
+            shirtMesh.position.set(0, 2.80 * s + yOff, 0); shirtMesh.castShadow = true;
+            group.add(shirtMesh);
+
+            const belt = new THREE.Mesh(new THREE.BoxGeometry(0.96 * s, 0.12 * s, 0.60 * s), pedraDarkMat);
+            belt.position.set(0, 2.05 * s + yOff, 0); group.add(belt);
+
+            const collar = new THREE.Mesh(new THREE.TorusGeometry(0.25 * s, 0.05 * s, 8, 16), brickDarkMat);
+            collar.rotation.x = Math.PI / 2; collar.position.y = 3.2 * s + yOff; group.add(collar);
+
+            const headGroup = new THREE.Group();
+            headGroup.position.y = 3.65 * s + yOff; group.add(headGroup);
+
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.5 * s, 24, 20), pedraMat);
+            head.castShadow = true; headGroup.add(head);
+
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.18 * s, 0.18 * s, 0.4 * s, 12), brickMat);
+            neck.position.y = -0.3 * s; headGroup.add(neck);
+
+            const eyebrowGeo = new THREE.BoxGeometry(0.24 * s, 0.045 * s, 0.035 * s);
+            const leftEyebrow = new THREE.Mesh(eyebrowGeo, pedraDarkMat);
+            leftEyebrow.position.set(0.18 * s, 0.23 * s, 0.475 * s); leftEyebrow.rotation.z = 0.32;
+            headGroup.add(leftEyebrow);
+            const rightEyebrow = leftEyebrow.clone();
+            rightEyebrow.position.x = -0.18 * s; rightEyebrow.rotation.z = -0.32;
+            headGroup.add(rightEyebrow);
+
+            const eyeGeo = new THREE.SphereGeometry(0.095 * s, 12, 12);
+            const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+            leftEye.position.set(0.18 * s, 0.08 * s, 0.43 * s); leftEye.scale.set(1.0, 0.55, 0.35);
+            headGroup.add(leftEye);
+            const leftPupil = new THREE.Mesh(new THREE.SphereGeometry(0.04 * s, 8, 8), pupilMat);
+            leftPupil.position.set(0.18 * s, 0.075 * s, 0.49 * s); headGroup.add(leftPupil);
+            const rightEye = leftEye.clone(); rightEye.position.x = -0.18 * s; headGroup.add(rightEye);
+            const rightPupil = leftPupil.clone(); rightPupil.position.x = -0.18 * s; headGroup.add(rightPupil);
+
+            const beanie = new THREE.Mesh(new THREE.SphereGeometry(0.53 * s, 24, 16), pedraMat);
+            beanie.scale.set(1.02, 0.52, 1.02); beanie.position.y = 0.39 * s; beanie.castShadow = true;
+            headGroup.add(beanie);
+
+            const shoulderGeo = new THREE.SphereGeometry(0.16 * s, 16, 16);
+
+            const leftArmGroup = new THREE.Group();
+            leftArmGroup.position.set(0.72 * s, 3.05 * s + yOff, 0);
+            leftArmGroup.rotation.z = 0.05; leftArmGroup.rotation.x = 0.02;
+            group.add(leftArmGroup);
+
+            const leftShoulderCap = new THREE.Mesh(shoulderGeo, brickMat);
+            leftShoulderCap.scale.set(1.0, 0.9, 1.0); leftShoulderCap.castShadow = true;
+            leftArmGroup.add(leftShoulderCap);
+
+            const leftSleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.18 * s, 0.15 * s, 0.4 * s, 12), brickMat);
+            leftSleeve.position.y = -0.15 * s; leftArmGroup.add(leftSleeve);
+
+            const leftArm = new THREE.Mesh(limbGeo, brickMat);
+            leftArm.position.y = -0.8 * s; leftArm.castShadow = true; leftArmGroup.add(leftArm);
+
+            const rightArmGroup = new THREE.Group();
+            rightArmGroup.position.set(-0.72 * s, 3.05 * s + yOff, 0);
+            rightArmGroup.rotation.z = -0.05; rightArmGroup.rotation.x = 0.02;
+            group.add(rightArmGroup);
+
+            rightArmGroup.add(leftShoulderCap.clone());
+            rightArmGroup.add(leftSleeve.clone());
+            rightArmGroup.add(leftArm.clone());
+
+            const rightHand = new THREE.Mesh(new THREE.SphereGeometry(0.14 * s, 12, 12), brickMat);
+            rightHand.scale.set(0.9, 1.1, 0.9); rightHand.position.y = -1.48 * s; rightHand.castShadow = true;
+            rightArmGroup.add(rightHand);
+
+            const leftLeg = new THREE.Mesh(limbGeo, brickMat);
+            leftLeg.position.set(0.35 * s, 1.0 * s + yOff, 0); leftLeg.castShadow = true; group.add(leftLeg);
+            const rightLeg = leftLeg.clone(); rightLeg.position.x = -0.35 * s; group.add(rightLeg);
+
+            [0.35, -0.35].forEach((x) => {
+                for (let y = 0.62; y <= 1.35; y += 0.22) {
+                    const wrap = new THREE.Mesh(new THREE.TorusGeometry(0.125 * s, 0.018 * s, 6, 12), pedraDarkMat);
+                    wrap.rotation.x = Math.PI / 2;
+                    wrap.position.set(x * s, y * s + yOff, 0);
+                    group.add(wrap);
+                }
             });
 
-            // Ruínas espalhadas
-            const ruinPositions = [
-                { x: -45, z: 35, scale: 1.5 },
-                { x: 50, z: 25, scale: 1.2 },
-                { x: -25, z: -45, scale: 1.3 },
-                { x: 40, z: -30, scale: 1.4 }
+            const makeBoot = (xSide) => {
+                const footGroup = new THREE.Group();
+                footGroup.position.set(xSide * s, 0.2 * s + yOff, 0);
+                const bootShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * s, 0.25 * s, 0.42 * s, 12), brickMat);
+                bootShaft.position.set(0, 0.08 * s, 0); bootShaft.castShadow = true; footGroup.add(bootShaft);
+                const leftFoot = new THREE.Mesh(new THREE.SphereGeometry(0.29 * s, 16, 12), brickMat);
+                leftFoot.scale.set(0.82, 0.62, 1.32); leftFoot.position.set(0, -0.08 * s, 0.18 * s); leftFoot.castShadow = true; footGroup.add(leftFoot);
+                const leftSole = new THREE.Mesh(new THREE.SphereGeometry(0.30 * s, 16, 8), brickDarkMat);
+                leftSole.scale.set(0.84, 0.20, 1.34); leftSole.position.set(0, -0.25 * s, 0.18 * s); leftSole.castShadow = true; footGroup.add(leftSole);
+                const bootBand = new THREE.Mesh(new THREE.TorusGeometry(0.235 * s, 0.025 * s, 8, 12), brickDarkMat);
+                bootBand.scale.set(1, 0.72, 1); bootBand.rotation.x = Math.PI / 2; bootBand.position.set(0, 0.23 * s, 0); footGroup.add(bootBand);
+                const bootToe = new THREE.Mesh(new THREE.SphereGeometry(0.18 * s, 12, 8), brickMat);
+                bootToe.scale.set(0.9, 0.65, 1.15); bootToe.position.set(0, -0.03 * s, 0.48 * s); bootToe.rotation.x = -0.12; bootToe.castShadow = true; footGroup.add(bootToe);
+                return footGroup;
+            };
+            group.add(makeBoot(0.35));
+            group.add(makeBoot(-0.35));
+            return group;
+        }
+
+        async _buildRuins() {
+            const statuesGroup = new THREE.Group();
+            statuesGroup.name = 'brick_statues_map2';
+
+            // Mesmas posições das antigas ruínas → agora estátuas de tijolos do ladrão petrificado
+            const statuePositions = [
+                { x: -45, z: 35, scale: 1.35, rot: 0.4 },
+                { x: 50, z: 25, scale: 1.15, rot: -0.8 },
+                { x: -25, z: -45, scale: 1.25, rot: 2.2 },
+                { x: 40, z: -30, scale: 1.3, rot: -1.5 }
             ];
 
-            for (const pos of ruinPositions) {
+            for (const pos of statuePositions) {
                 const y = this.getTerrainHeight(pos.x, pos.z);
-                const ruin = new THREE.Group();
-                ruin.position.set(pos.x, y, pos.z);
+                if (y < this.cfg.waterLevel + 0.5) continue;
 
-                // Blocos de ruína
-                for (let i = 0; i < 4; i++) {
-                    const block = new THREE.Mesh(
-                        new THREE.BoxGeometry(2 * pos.scale, 1.5 * pos.scale, 2 * pos.scale),
-                        stoneMat.clone()
-                    );
-                    block.position.y = i * 1.6 * pos.scale;
-                    block.rotation.z = Math.random() * 0.3;
-                    block.castShadow = true;
-                    block.receiveShadow = true;
-                    ruin.add(block);
-                }
+                const statue = this._createStoneManStatue(pos.scale);
+                statue.position.set(pos.x, y, pos.z);
+                statue.rotation.y = pos.rot;
+                statuesGroup.add(statue);
 
-                ruinsGroup.add(ruin);
+                this.colliders.push({
+                    x: pos.x,
+                    z: pos.z,
+                    radius: 1.2 * pos.scale,
+                    type: 'statue'
+                });
             }
 
-            this.scene.add(ruinsGroup);
-            this._groups.push(ruinsGroup);
+            this.scene.add(statuesGroup);
+            this._groups.push(statuesGroup);
         }
 
         async _buildTrees() {
@@ -808,15 +979,18 @@
                 return y;
             };
 
-            // ---------- Arbustos (esferas achatadas em tons de verde) ----------
-            const bushGeo = new THREE.SphereGeometry(0.55, 7, 6);
+            // ---------- Arbustos (clusters de esferas, tons variados) ----------
+            const bushGeo = new THREE.SphereGeometry(0.55, 8, 6);
             const bushMats = [
                 new THREE.MeshStandardMaterial({ color: 0x2d5a27, roughness: 0.92, metalness: 0 }),
                 new THREE.MeshStandardMaterial({ color: 0x3d6b32, roughness: 0.9, metalness: 0 }),
-                new THREE.MeshStandardMaterial({ color: 0x1a4d1a, roughness: 0.94, metalness: 0 })
+                new THREE.MeshStandardMaterial({ color: 0x1a4d1a, roughness: 0.94, metalness: 0 }),
+                new THREE.MeshStandardMaterial({ color: 0x4a7c3a, roughness: 0.88, metalness: 0 }),
+                new THREE.MeshStandardMaterial({ color: 0x365c2a, roughness: 0.91, metalness: 0 })
             ];
+            // Reserva extra de instâncias (clusters de 3–4)
             const bushInstances = bushMats.map((mat, mi) => {
-                const n = Math.ceil(bushCount / bushMats.length);
+                const n = Math.ceil((bushCount * 3.2) / bushMats.length);
                 const mesh = new THREE.InstancedMesh(bushGeo, mat, n);
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
@@ -824,7 +998,8 @@
                 return { mesh, placed: 0, max: n };
             });
 
-            for (let i = 0; i < bushCount * 3; i++) {
+            let bushesPlaced = 0;
+            for (let i = 0; i < bushCount * 4 && bushesPlaced < bushCount; i++) {
                 const a = Math.random() * Math.PI * 2;
                 const r = minR + Math.random() * (maxR - minR);
                 const x = Math.cos(a) * r;
@@ -832,22 +1007,34 @@
                 const y = canPlace(x, z);
                 if (y === false) continue;
 
-                // Cada arbusto = 2–3 esferas sobrepostas
-                const cluster = 2 + (Math.random() > 0.45 ? 1 : 0);
+                // Cada arbusto = 3–4 esferas sobrepostas (mais volume)
+                const cluster = 3 + (Math.random() > 0.5 ? 1 : 0);
+                let added = 0;
                 for (let c = 0; c < cluster; c++) {
                     const bi = Math.floor(Math.random() * bushInstances.length);
                     const slot = bushInstances[bi];
                     if (slot.placed >= slot.max) continue;
 
-                    const ox = (Math.random() - 0.5) * 0.55;
-                    const oz = (Math.random() - 0.5) * 0.55;
-                    const s = 0.55 + Math.random() * 0.75;
-                    _dummy.position.set(x + ox, y + 0.25 * s, z + oz);
-                    _dummy.rotation.set(0, Math.random() * Math.PI * 2, 0);
-                    _dummy.scale.set(s * (0.9 + Math.random() * 0.3), s * (0.55 + Math.random() * 0.35), s * (0.9 + Math.random() * 0.3));
+                    const ox = (Math.random() - 0.5) * 0.65;
+                    const oz = (Math.random() - 0.5) * 0.65;
+                    const s = 0.5 + Math.random() * 0.7;
+                    const hMul = 0.5 + Math.random() * 0.4;
+                    _dummy.position.set(x + ox, y + 0.22 * s * hMul + 0.05, z + oz);
+                    _dummy.rotation.set(
+                        (Math.random() - 0.5) * 0.25,
+                        Math.random() * Math.PI * 2,
+                        (Math.random() - 0.5) * 0.25
+                    );
+                    _dummy.scale.set(
+                        s * (0.85 + Math.random() * 0.35),
+                        s * hMul,
+                        s * (0.85 + Math.random() * 0.35)
+                    );
                     _dummy.updateMatrix();
                     slot.mesh.setMatrixAt(slot.placed++, _dummy.matrix);
+                    added++;
                 }
+                if (added > 0) bushesPlaced++;
                 if (bushInstances.every(s => s.placed >= s.max)) break;
             }
             for (const slot of bushInstances) {
@@ -1120,36 +1307,404 @@
             return group;
         }
 
-        _initCollectibles() {
-            // Cristais com melhor aparência
-            const crystalGeo = new THREE.OctahedronGeometry(0.5, 2);
 
-            const crystalMat = new THREE.MeshStandardMaterial({
-                color: 0xa78bfa,
-                emissive: 0x7c3aed,
-                emissiveIntensity: 0.8,
-                roughness: 0.15,
-                metalness: 0.6,
-                wireframe: false
+        /**
+         * Erva medicinal detalhada: caule, folhas lanceoladas, flores
+         * e brilho mágico suave (missão da Curandeira).
+         * @param {number} scale
+         * @returns {THREE.Group}
+         */
+        _createMedicinalHerb(scale = 1) {
+            const s = scale;
+            const group = new THREE.Group();
+            group.name = 'medicinal_herb';
+
+            const stemMat = new THREE.MeshStandardMaterial({
+                color: 0x3f7a2e,
+                roughness: 0.85,
+                metalness: 0.02
+            });
+            const leafMat = new THREE.MeshStandardMaterial({
+                color: 0x22c55e,
+                emissive: 0x14532d,
+                emissiveIntensity: 0.18,
+                roughness: 0.72,
+                metalness: 0.0,
+                side: THREE.DoubleSide
+            });
+            const leafDarkMat = new THREE.MeshStandardMaterial({
+                color: 0x166534,
+                emissive: 0x052e16,
+                emissiveIntensity: 0.12,
+                roughness: 0.8,
+                side: THREE.DoubleSide
+            });
+            const flowerMat = new THREE.MeshStandardMaterial({
+                color: 0xa3e635,
+                emissive: 0x65a30d,
+                emissiveIntensity: 0.45,
+                roughness: 0.4,
+                metalness: 0.05
+            });
+            const berryMat = new THREE.MeshStandardMaterial({
+                color: 0xf472b6,
+                emissive: 0xdb2777,
+                emissiveIntensity: 0.25,
+                roughness: 0.4
             });
 
-            for (let i = 0; i < 12; i++) {
-                const a = Math.random() * Math.PI * 2;
-                const r = 25 + Math.random() * 75;
-                const x = Math.cos(a) * r;
-                const z = Math.sin(a) * r;
-                const y = this.getTerrainHeight(x, z);
+            // Caule principal
+            const stem = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.035 * s, 0.055 * s, 0.95 * s, 6),
+                stemMat
+            );
+            stem.position.y = 0.48 * s;
+            stem.rotation.z = 0.06;
+            stem.castShadow = true;
+            group.add(stem);
 
-                if (y < this.cfg.waterLevel + 0.8) continue;
+            // Ramificação
+            const stem2 = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.022 * s, 0.032 * s, 0.42 * s, 5),
+                stemMat
+            );
+            stem2.position.set(0.12 * s, 0.72 * s, 0.02 * s);
+            stem2.rotation.z = -0.55;
+            stem2.rotation.x = 0.15;
+            stem2.castShadow = true;
+            group.add(stem2);
 
-                const mesh = new THREE.Mesh(crystalGeo, crystalMat.clone());
-                mesh.position.set(x, y + 1.0, z);
+            // Folha lanceolada
+            const makeLeaf = (w, h, mat) => {
+                const shape = new THREE.Shape();
+                shape.moveTo(0, 0);
+                shape.quadraticCurveTo(w * 0.55, h * 0.25, w * 0.48, h * 0.55);
+                shape.quadraticCurveTo(w * 0.22, h * 0.92, 0, h);
+                shape.quadraticCurveTo(-w * 0.22, h * 0.92, -w * 0.48, h * 0.55);
+                shape.quadraticCurveTo(-w * 0.55, h * 0.25, 0, 0);
+                const geo = new THREE.ShapeGeometry(shape);
+                const mesh = new THREE.Mesh(geo, mat);
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
-                mesh.userData = { type: 'crystal', value: 1 };
-                this.scene.add(mesh);
-                this.collectibles.push(mesh);
-            }
+                return mesh;
+            };
+
+            const leafPositions = [
+                // x, y, z, rotY, rotX, rotZ, scale, dark
+                [0.18, 0.28, 0.05, 0.9, -0.55, 0.25, 0.85, false],
+                [-0.16, 0.35, -0.08, -1.1, -0.5, -0.3, 0.9, true],
+                [0.14, 0.52, 0.1, 1.4, -0.65, 0.15, 0.75, false],
+                [-0.2, 0.58, 0.02, -0.7, -0.7, -0.2, 0.8, false],
+                [0.08, 0.75, -0.12, 2.1, -0.45, 0.35, 0.7, true],
+                [-0.1, 0.82, 0.08, -2.3, -0.55, -0.25, 0.65, false],
+                [0.22, 0.68, -0.05, 0.4, -0.8, 0.4, 0.6, true],
+                [0.05, 0.95, 0.0, 0.0, -0.35, 0.1, 0.55, false]
+            ];
+
+            leafPositions.forEach(([x, y, z, ry, rx, rz, sc, dark]) => {
+                const leaf = makeLeaf(0.22 * s * sc, 0.38 * s * sc, dark ? leafDarkMat : leafMat);
+                leaf.position.set(x * s, y * s, z * s);
+                leaf.rotation.set(rx, ry, rz);
+                group.add(leaf);
+            });
+
+            // Flores / botões no topo
+            const flowerPositions = [
+                [0.02, 1.05, 0.0, 1.0],
+                [0.28, 0.88, 0.04, 0.75],
+                [-0.12, 0.98, -0.06, 0.7],
+                [0.15, 0.78, 0.12, 0.55]
+            ];
+            flowerPositions.forEach(([x, y, z, sc]) => {
+                const center = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.045 * s * sc, 6, 5),
+                    flowerMat
+                );
+                center.position.set(x * s, y * s, z * s);
+                group.add(center);
+                for (let p = 0; p < 5; p++) {
+                    const ang = (p / 5) * Math.PI * 2;
+                    const petal = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.038 * s * sc, 5, 4),
+                        flowerMat
+                    );
+                    petal.position.set(
+                        x * s + Math.cos(ang) * 0.055 * s * sc,
+                        y * s + 0.01 * s,
+                        z * s + Math.sin(ang) * 0.055 * s * sc
+                    );
+                    petal.scale.set(1, 0.55, 1);
+                    group.add(petal);
+                }
+            });
+
+            // Bagas rosa (detalhe medicinal)
+            const berryPositions = [
+                [0.1, 0.62, -0.1],
+                [-0.18, 0.48, 0.06],
+                [0.2, 0.4, 0.08]
+            ];
+            berryPositions.forEach(([x, y, z]) => {
+                const berry = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.032 * s, 6, 5),
+                    berryMat
+                );
+                berry.position.set(x * s, y * s, z * s);
+                berry.castShadow = true;
+                group.add(berry);
+            });
+
+            // Base de terra
+            const base = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.12 * s, 0.16 * s, 0.08 * s, 7),
+                new THREE.MeshStandardMaterial({
+                    color: 0x5c4033,
+                    roughness: 0.95
+                })
+            );
+            base.position.y = 0.03 * s;
+            group.add(base);
+
+            group.userData = {
+                type: 'herb',
+                baseY: 0
+            };
+            return group;
+        }
+
+        /**
+         * Cristal místico com núcleo + 2–3 fragmentos laterais (detalhe moderado).
+         * @param {number} scale
+         * @returns {THREE.Group}
+         */
+        _createCrystal(scale = 1) {
+            const s = scale;
+            const group = new THREE.Group();
+            group.name = 'mystic_crystal';
+
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0x22d3ee,
+                emissive: 0x0891b2,
+                emissiveIntensity: 0.5,
+                roughness: 0.18,
+                metalness: 0.15,
+                transparent: true,
+                opacity: 0.92
+            });
+            const matDark = new THREE.MeshStandardMaterial({
+                color: 0x0e7490,
+                emissive: 0x155e75,
+                emissiveIntensity: 0.35,
+                roughness: 0.25,
+                metalness: 0.2
+            });
+
+            // Núcleo principal
+            const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.55 * s, 0), mat);
+            core.position.y = 0.55 * s;
+            core.rotation.y = 0.4;
+            core.castShadow = true;
+            group.add(core);
+
+            // Fragmento alto fino
+            const tip = new THREE.Mesh(new THREE.OctahedronGeometry(0.28 * s, 0), mat);
+            tip.position.set(0.12 * s, 1.05 * s, -0.08 * s);
+            tip.scale.set(0.55, 1.15, 0.55);
+            tip.rotation.set(0.2, 0.8, 0.15);
+            tip.castShadow = true;
+            group.add(tip);
+
+            // Fragmentos laterais menores
+            const sideA = new THREE.Mesh(new THREE.OctahedronGeometry(0.22 * s, 0), matDark);
+            sideA.position.set(-0.32 * s, 0.42 * s, 0.1 * s);
+            sideA.scale.set(0.7, 0.9, 0.7);
+            sideA.rotation.set(-0.3, 1.2, 0.4);
+            group.add(sideA);
+
+            const sideB = new THREE.Mesh(new THREE.OctahedronGeometry(0.18 * s, 0), matDark);
+            sideB.position.set(0.28 * s, 0.35 * s, 0.18 * s);
+            sideB.scale.set(0.65, 0.8, 0.65);
+            sideB.rotation.set(0.25, -0.6, -0.2);
+            group.add(sideB);
+
+            // Base rochosa discreta
+            const base = new THREE.Mesh(
+                new THREE.DodecahedronGeometry(0.22 * s, 0),
+                new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9, metalness: 0.1 })
+            );
+            base.position.y = 0.08 * s;
+            base.scale.set(1.2, 0.55, 1.2);
+            group.add(base);
+
+            return group;
+        }
+
+        /**
+         * Minério: pedra principal + veios e fragmentos (detalhe moderado).
+         * @param {number} scale
+         * @returns {THREE.Group}
+         */
+        _createOre(scale = 1) {
+            const s = scale;
+            const group = new THREE.Group();
+            group.name = 'ore_rock';
+
+            const rockMat = new THREE.MeshStandardMaterial({
+                color: 0x78716c,
+                roughness: 0.88,
+                metalness: 0.15
+            });
+            const oreMat = new THREE.MeshStandardMaterial({
+                color: 0xd97706,
+                emissive: 0x92400e,
+                emissiveIntensity: 0.28,
+                roughness: 0.45,
+                metalness: 0.55
+            });
+            const veinMat = new THREE.MeshStandardMaterial({
+                color: 0xfbbf24,
+                emissive: 0xb45309,
+                emissiveIntensity: 0.2,
+                roughness: 0.4,
+                metalness: 0.6
+            });
+
+            // Pedra principal irregular
+            const main = new THREE.Mesh(new THREE.DodecahedronGeometry(0.42 * s, 0), rockMat);
+            main.position.y = 0.35 * s;
+            main.scale.set(1.15, 0.9, 1.05);
+            main.rotation.set(0.3, 0.5, -0.15);
+            main.castShadow = true;
+            group.add(main);
+
+            // Bloco de minério embutido
+            const chunk = new THREE.Mesh(new THREE.DodecahedronGeometry(0.22 * s, 0), oreMat);
+            chunk.position.set(0.12 * s, 0.42 * s, 0.18 * s);
+            chunk.scale.set(0.9, 0.75, 1.1);
+            chunk.rotation.set(-0.4, 1.1, 0.2);
+            chunk.castShadow = true;
+            group.add(chunk);
+
+            // Veio fino
+            const vein = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08 * s, 0.35 * s, 0.06 * s),
+                veinMat
+            );
+            vein.position.set(-0.15 * s, 0.4 * s, 0.05 * s);
+            vein.rotation.set(0.5, 0.3, 0.7);
+            group.add(vein);
+
+            // Fragmento menor ao lado
+            const bit = new THREE.Mesh(new THREE.DodecahedronGeometry(0.14 * s, 0), oreMat);
+            bit.position.set(-0.28 * s, 0.18 * s, -0.12 * s);
+            bit.rotation.set(0.6, -0.4, 0.3);
+            group.add(bit);
+
+            // Pedra de apoio
+            const support = new THREE.Mesh(new THREE.DodecahedronGeometry(0.18 * s, 0), rockMat);
+            support.position.set(0.2 * s, 0.12 * s, -0.2 * s);
+            support.scale.set(1, 0.6, 0.9);
+            group.add(support);
+
+            return group;
+        }
+
+        _initCollectibles() {
+            // Mesmos modelos da Vila: cristal, minério (pedra+veios) e erva medicinal
+            const minDry = this.cfg.waterLevel + 0.8;
+            const isDry = (x, z) => this.getTerrainHeight(x, z) >= minDry;
+
+            // Cristais místicos (modelo detalhado da vila)
+            const crystalCoords = [
+                [32, -38], [50, -20], [-40, 48], [60, 30], [-60, -35],
+                [22, -55], [-28, -48], [75, -25], [-70, 25], [48, 60],
+                [-55, 55], [15, 40]
+            ];
+            crystalCoords.forEach((pt, i) => {
+                let [x, z] = pt;
+                if (!isDry(x, z)) {
+                    for (let t = 0; t < 24 && !isDry(x, z); t++) {
+                        x += (Math.random() - 0.5) * 8;
+                        z += (Math.random() - 0.5) * 8;
+                    }
+                }
+                if (!isDry(x, z)) return;
+                const crystal = this._createCrystal(1.0 + Math.random() * 0.15);
+                const gy = this.getTerrainHeight(x, z);
+                crystal.position.set(x, gy, z);
+                crystal.rotation.y = Math.random() * Math.PI * 2;
+                crystal.userData = {
+                    id: 'crystal_' + i,
+                    type: 'crystal',
+                    name: 'Cristal Místico',
+                    baseY: gy
+                };
+                crystal.name = 'crystal_' + i;
+                this.scene.add(crystal);
+                this.collectibles.push(crystal);
+                this._groups.push(crystal);
+            });
+
+            // Minérios / pedras com veios (modelo detalhado da vila)
+            const oreCoords = [
+                [40, -30], [-35, 20], [55, 45], [-50, -20], [20, 55],
+                [-20, -60], [70, 10], [-65, 40], [10, -45], [-45, 60]
+            ];
+            oreCoords.forEach((pt, i) => {
+                let [x, z] = pt;
+                if (!isDry(x, z)) {
+                    for (let t = 0; t < 24 && !isDry(x, z); t++) {
+                        x += (Math.random() - 0.5) * 8;
+                        z += (Math.random() - 0.5) * 8;
+                    }
+                }
+                if (!isDry(x, z)) return;
+                const ore = this._createOre(1.0 + Math.random() * 0.2);
+                const gy = this.getTerrainHeight(x, z);
+                ore.position.set(x, gy, z);
+                ore.rotation.y = Math.random() * Math.PI * 2;
+                ore.userData = {
+                    id: 'ore_' + i,
+                    type: 'ore',
+                    name: 'Minério',
+                    baseY: gy
+                };
+                ore.name = 'ore_' + i;
+                this.scene.add(ore);
+                this.collectibles.push(ore);
+                this._groups.push(ore);
+            });
+
+            // Ervas medicinais (modelo detalhado da vila)
+            const herbCoords = [
+                [28, -42], [-30, 35], [45, 20], [-55, -40], [65, -15],
+                [-15, 65], [35, 50], [-70, 5], [5, -70], [55, -50],
+                [-40, -55], [18, 28]
+            ];
+            herbCoords.forEach((pt, i) => {
+                let [x, z] = pt;
+                if (!isDry(x, z)) {
+                    for (let t = 0; t < 24 && !isDry(x, z); t++) {
+                        x += (Math.random() - 0.5) * 8;
+                        z += (Math.random() - 0.5) * 8;
+                    }
+                }
+                if (!isDry(x, z)) return;
+                const herb = this._createMedicinalHerb(1.05 + Math.random() * 0.2);
+                const gy = this.getTerrainHeight(x, z);
+                herb.position.set(x, gy, z);
+                herb.rotation.y = Math.random() * Math.PI * 2;
+                herb.userData = {
+                    id: 'herb_' + i,
+                    type: 'herb',
+                    name: 'Erva Medicinal',
+                    baseY: gy
+                };
+                herb.name = 'herb_' + i;
+                this.scene.add(herb);
+                this.collectibles.push(herb);
+                this._groups.push(herb);
+            });
 
             // Baús de tesouro detalhados
             const chestPositions = [
@@ -1172,6 +1727,7 @@
                 this.colliders.push({ x: pos.x, z: pos.z, radius: 1.4, type: 'chest' });
             }
         }
+
 
         /**
          * Carruagem destruída + partes espalhadas (missão do mercador)
@@ -1609,10 +2165,11 @@
             for (const c of this.collectibles) {
                 if (!c.userData) continue;
                 if (c.userData.type === 'crystal') {
-                    c.rotation.x += 0.01;
-                    c.rotation.y = time * 1.5;
-                    const terrainY = this.getTerrainHeight(c.position.x, c.position.z);
-                    c.position.y = terrainY + 1.0 + Math.sin(time * 2.2 + c.position.x * 0.1) * 0.25;
+                    c.rotation.y = time * 0.8;
+                    const base = c.userData.baseY != null
+                        ? c.userData.baseY
+                        : this.getTerrainHeight(c.position.x, c.position.z);
+                    c.position.y = base + Math.sin(time * 2.0 + c.position.x * 0.1) * 0.12;
                 } else if (c.userData.type === 'carriage_part') {
                     c.rotation.y = time * 0.9;
                     const base = c.userData.baseY != null

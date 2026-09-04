@@ -164,9 +164,21 @@
             }
 
             renderer.shadowMap.enabled = enableShadows;
+            if (sunLight) {
+                sunLight.castShadow = enableShadows;
+                // Ao desligar, libera o mapa antigo para as sombras sumirem de verdade
+                if (!enableShadows && sunLight.shadow) {
+                    try {
+                        if (sunLight.shadow.map) {
+                            sunLight.shadow.map.dispose();
+                            sunLight.shadow.map = null;
+                        }
+                    } catch (_) { /* ignore */ }
+                }
+            }
             if (scene && scene.fog) scene.fog.density = fogDensity;
 
-            if (sunLight && sunLight.shadow) {
+            if (sunLight && sunLight.shadow && enableShadows) {
                 const cur = sunLight.shadow.mapSize.x;
                 if (cur !== wantSize) {
                     sunLight.shadow.mapSize.set(wantSize, wantSize);

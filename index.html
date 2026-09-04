@@ -41,6 +41,7 @@
     <script src="crianca.js"></script>
     <script src="aldeao.js"></script>
     <script src="anciao.js"></script>
+    <script src="missoes.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Outfit:wght@300;400;600;700&display=swap');
         * { box-sizing: border-box; }
@@ -215,38 +216,51 @@
             #hud-stats-panel .hud-stat-row { margin-bottom: 0.2rem !important; }
             #hud-stats-panel .hud-header { margin-bottom: 0.3rem !important; gap: 0.35rem !important; }
 
-            /* Minimapa — pequeno, alto e à direita (deixa espaço pros botões mobile) */
             #hud-top-right {
                 gap: 0.25rem !important;
-                margin-right: 3rem !important; /* espaço para coluna de botões mobile */
+                margin-right: 3rem !important;
             }
-            #minimap-panel {
-                padding: 0.2rem !important;
-                border-radius: 0.55rem !important;
-            }
-            #minimap-panel .minimap-box {
-                width: 3.4rem !important;
-                height: 3.4rem !important;
-                border-radius: 0.4rem !important;
-            }
-            #minimap-panel #hud-time-display,
-            #minimap-panel #hud-fps {
+            #hud-top-right #hud-time-display,
+            #hud-top-right #hud-fps {
                 font-size: 0.5rem !important;
-                margin-top: 0.08rem !important;
                 line-height: 1.1 !important;
             }
             /* Pausa do HUD desktop fica oculta — usamos a do mobile-controls */
             #btn-pause-hud { display: none !important; }
 
-            /* Missão — compacta */
+            /* Missão — pequena e no alto (não cobre o joystick de movimento) */
             #quest-hud-panel {
-                padding: 0.4rem 0.55rem !important;
-                max-width: 11rem !important;
-                border-radius: 0.65rem !important;
+                position: absolute !important;
+                left: 6px !important;
+                top: 5.6rem !important; /* logo abaixo do painel de stats */
+                bottom: auto !important;
+                right: auto !important;
+                padding: 0.28rem 0.4rem !important;
+                max-width: 8.2rem !important;
+                width: auto !important;
+                border-radius: 0.5rem !important;
+                border-left-width: 3px !important;
+                z-index: 22 !important;
+                pointer-events: none !important;
+                background: rgba(15, 23, 42, 0.72) !important;
             }
-            #quest-hud-panel .quest-label { font-size: 0.55rem !important; }
-            #quest-hud-title { font-size: 0.7rem !important; }
-            #quest-hud-desc { font-size: 0.6rem !important; line-height: 1.2 !important; }
+            #quest-hud-panel .quest-label {
+                font-size: 0.48rem !important;
+                margin-bottom: 0 !important;
+                gap: 0.2rem !important;
+            }
+            #quest-hud-title {
+                font-size: 0.62rem !important;
+                line-height: 1.15 !important;
+            }
+            #quest-hud-desc {
+                font-size: 0.52rem !important;
+                line-height: 1.15 !important;
+                display: -webkit-box !important;
+                -webkit-line-clamp: 2 !important;
+                -webkit-box-orient: vertical !important;
+                overflow: hidden !important;
+            }
 
             /* Habilidades — bem embaixo, acima dos botões de ação */
             #spell-hotbar {
@@ -283,10 +297,6 @@
                 max-width: 8.2rem !important;
                 padding: 0.35rem 0.45rem !important;
             }
-            #minimap-panel .minimap-box {
-                width: 3.1rem !important;
-                height: 3.1rem !important;
-            }
             #spell-hotbar {
                 bottom: 0.35rem !important;
                 transform: translateX(-50%) scale(0.78) !important;
@@ -310,6 +320,13 @@
             .mobile-btn-lg { width: 54px !important; height: 54px !important; font-size: 1.2rem !important; }
             .mobile-btn-sm { width: 36px !important; height: 36px !important; font-size: 0.85rem !important; }
             #mobile-top-right { top: 6px !important; right: 6px !important; gap: 0.25rem !important; }
+            #quest-hud-panel {
+                top: 4.6rem !important;
+                max-width: 7.2rem !important;
+                padding: 0.22rem 0.35rem !important;
+            }
+            #quest-hud-title { font-size: 0.58rem !important; }
+            #quest-hud-desc { font-size: 0.48rem !important; }
         }
 
         /* Aviso: jogue em paisagem */
@@ -419,33 +436,23 @@
                         </div>
                     </div>
                 </div>
-                <div id="hud-top-right" class="flex flex-col items-end gap-2 pointer-events-auto">
+                <div id="hud-top-right" class="flex flex-col items-end gap-1.5 pointer-events-auto">
                     <button id="btn-pause-hud" onclick="Game.togglePause()" title="Pausar (ESC / P)"
                         class="glass-panel rounded-xl w-11 h-11 flex items-center justify-center text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 border border-slate-600/60 transition active:scale-95"
                         style="pointer-events:auto">
                         <i class="fa-solid fa-pause text-lg"></i>
                     </button>
-                <div id="minimap-panel" class="glass-panel rounded-2xl p-2 flex flex-col items-center">
-                    <div class="minimap-box relative w-32 h-32 md:w-36 md:h-36 rounded-xl overflow-hidden border border-slate-500/60 bg-slate-950/95 shadow-inner">
-                        <canvas id="minimap-canvas" width="160" height="160" class="w-full h-full"></canvas>
-                        <div class="absolute top-0.5 left-1/2 -translate-x-1/2 text-[9px] font-black text-amber-300 drop-shadow">N</div>
+                    <div class="glass-panel rounded-lg px-2 py-1 text-right leading-tight">
+                        <div class="text-[10px] font-semibold text-slate-400 flex items-center justify-end gap-1" id="hud-time-display">
+                            <i class="fa-solid fa-sun text-amber-400"></i> 12:00
+                        </div>
+                        <div class="text-[10px] text-slate-500" id="hud-fps">60 FPS</div>
                     </div>
-                    <div class="flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mt-1 max-w-[9rem] text-[8px] leading-tight text-slate-400">
-                        <span class="flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>Você</span>
-                        <span class="flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>Monstro</span>
-                        <span class="flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block"></span>Cristal</span>
-                        <span class="flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>NPC</span>
-                    </div>
-                    <div class="text-[10px] font-semibold text-slate-400 mt-1 flex items-center gap-1" id="hud-time-display">
-                        <i class="fa-solid fa-sun text-amber-400"></i> 12:00
-                    </div>
-                    <div class="text-[10px] text-slate-500 mt-0.5" id="hud-fps">60 FPS</div>
-                </div>
                 </div>
             </div>
 
             <div id="interaction-prompt" class="self-center glass-panel-gold rounded-full px-5 py-2 text-amber-200 font-bold text-sm tracking-wide flex items-center gap-2.5 border border-amber-400/40 shadow-2xl transition-all duration-200 opacity-0 translate-y-4">
-                <span class="bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-md text-xs">E</span>
+                <span id="interaction-key-badge" class="bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-md text-xs inline-flex items-center justify-center min-w-[1.5rem]">E</span>
                 <span id="interaction-text">Interagir</span>
             </div>
 
@@ -474,32 +481,32 @@
         <div id="spell-hotbar" class="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto z-32 hidden">
             <div class="spell-slot glass-panel rounded-xl w-12 h-12 flex flex-col items-center justify-center border border-slate-600 relative cursor-pointer" data-spell="fireball" title="Bola de Fogo [1]" role="button">
                 <span class="text-xl leading-none">🔥</span>
-                <span class="text-[9px] text-slate-400 absolute bottom-0.5">1</span>
+                <span class="spell-key-label text-[9px] text-slate-400 absolute bottom-0.5">1</span>
                 <div class="spell-cd absolute inset-0 bg-slate-900/70 rounded-xl hidden items-center justify-center text-xs font-bold text-sky-300"></div>
             </div>
             <div class="spell-slot glass-panel rounded-xl w-12 h-12 flex flex-col items-center justify-center border border-slate-600 relative cursor-pointer" data-spell="lightning" title="Raio [2]" role="button">
                 <span class="text-xl leading-none">⚡</span>
-                <span class="text-[9px] text-slate-400 absolute bottom-0.5">2</span>
+                <span class="spell-key-label text-[9px] text-slate-400 absolute bottom-0.5">2</span>
                 <div class="spell-cd absolute inset-0 bg-slate-900/70 rounded-xl hidden items-center justify-center text-xs font-bold text-sky-300"></div>
             </div>
             <div class="spell-slot glass-panel rounded-xl w-12 h-12 flex flex-col items-center justify-center border border-slate-600 relative cursor-pointer" data-spell="heal" title="Cura [3]" role="button">
                 <span class="text-xl leading-none">❤️</span>
-                <span class="text-[9px] text-slate-400 absolute bottom-0.5">3</span>
+                <span class="spell-key-label text-[9px] text-slate-400 absolute bottom-0.5">3</span>
                 <div class="spell-cd absolute inset-0 bg-slate-900/70 rounded-xl hidden items-center justify-center text-xs font-bold text-sky-300"></div>
             </div>
             <div class="spell-slot glass-panel rounded-xl w-12 h-12 flex flex-col items-center justify-center border border-slate-600 relative cursor-pointer" data-spell="shadow_explosion" title="Explosão Sombria [4]" role="button">
                 <span class="text-xl leading-none">🌑</span>
-                <span class="text-[9px] text-slate-400 absolute bottom-0.5">4</span>
+                <span class="spell-key-label text-[9px] text-slate-400 absolute bottom-0.5">4</span>
                 <div class="spell-cd absolute inset-0 bg-slate-900/70 rounded-xl hidden items-center justify-center text-xs font-bold text-sky-300"></div>
             </div>
             <div class="spell-slot glass-panel rounded-xl w-12 h-12 flex flex-col items-center justify-center border border-slate-600 relative cursor-pointer" data-spell="magic_shield" title="Escudo Mágico [5]" role="button">
                 <span class="text-xl leading-none">🛡️</span>
-                <span class="text-[9px] text-slate-400 absolute bottom-0.5">5</span>
+                <span class="spell-key-label text-[9px] text-slate-400 absolute bottom-0.5">5</span>
                 <div class="spell-cd absolute inset-0 bg-slate-900/70 rounded-xl hidden items-center justify-center text-xs font-bold text-sky-300"></div>
             </div>
             <div class="spell-slot glass-panel rounded-xl w-12 h-12 flex flex-col items-center justify-center border border-slate-600 relative cursor-pointer" data-spell="summon_golem" title="Invocar Golem [6]" role="button">
                 <span class="text-xl leading-none">🪨</span>
-                <span class="text-[9px] text-slate-400 absolute bottom-0.5">6</span>
+                <span class="spell-key-label text-[9px] text-slate-400 absolute bottom-0.5">6</span>
                 <div class="spell-cd absolute inset-0 bg-slate-900/70 rounded-xl hidden items-center justify-center text-xs font-bold text-sky-300"></div>
             </div>
         </div>
@@ -552,7 +559,10 @@
                     </div>
                 </div>
                 <p class="text-slate-200 text-sm leading-relaxed mb-5 min-h-[50px]" id="npc-dialogue-text"></p>
-                <div class="flex justify-end">
+                <div class="flex flex-wrap justify-end gap-2" id="npc-dialogue-actions">
+                    <button id="btn-sell-wood" class="hidden bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl text-sm flex items-center gap-2" onclick="Game.sellWoodToFarmer()">
+                        <i class="fa-solid fa-tree"></i> Vender madeira
+                    </button>
                     <button class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-5 py-2 rounded-xl text-sm flex items-center gap-2" onclick="Game.closeDialogue()">
                         Continuar <i class="fa-solid fa-arrow-right"></i>
                     </button>
@@ -738,16 +748,8 @@
                     <h3 class="text-lg font-bold text-amber-400 cinzel-font">Controles</h3>
                     <button class="text-slate-400 hover:text-white" onclick="document.getElementById('controls-modal').classList.add('hidden')"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div class="grid grid-cols-2 gap-2 text-sm mb-4">
-                    <div class="flex justify-between bg-slate-900/60 p-2 rounded-lg"><span class="text-slate-400">Mover</span><span class="font-mono text-amber-300 font-bold">WASD</span></div>
-                    <div class="flex justify-between bg-slate-900/60 p-2 rounded-lg"><span class="text-slate-400">Correr</span><span class="font-mono text-amber-300 font-bold">Shift</span></div>
-                    <div class="flex justify-between bg-slate-900/60 p-2 rounded-lg"><span class="text-slate-400">Pular</span><span class="font-mono text-amber-300 font-bold">Espaço</span></div>
-                    <div class="flex justify-between bg-slate-900/60 p-2 rounded-lg"><span class="text-slate-400">Atacar</span><span class="font-mono text-amber-300 font-bold">Mouse</span></div>
-                    <div class="flex justify-between bg-slate-900/60 p-2 rounded-lg"><span class="text-slate-400">Interagir</span><span class="font-mono text-amber-300 font-bold">E</span></div>
-                    <div class="flex justify-between bg-slate-900/60 p-2 rounded-lg"><span class="text-slate-400">Mochila</span><span class="font-mono text-amber-300 font-bold">I</span></div>
-                    <div class="flex justify-between bg-slate-900/60 p-2 rounded-lg"><span class="text-slate-400">Poção</span><span class="font-mono text-amber-300 font-bold">Q</span></div>
-                    <div class="flex justify-between bg-slate-900/60 p-2 rounded-lg"><span class="text-slate-400">1ª / 3ª pessoa</span><span class="font-mono text-amber-300 font-bold">V</span></div>
-                    <div class="flex justify-between bg-slate-900/60 p-2 rounded-lg"><span class="text-slate-400">Pausar</span><span class="font-mono text-amber-300 font-bold">ESC / P</span></div>
+                <div id="controls-list" class="grid grid-cols-2 gap-2 text-sm mb-4">
+                    <!-- preenchido dinamicamente: teclado no PC, botões no mobile -->
                 </div>
                 <button class="w-full bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold py-2 rounded-xl" onclick="document.getElementById('controls-modal').classList.add('hidden')">Fechar</button>
             </div>
@@ -801,7 +803,7 @@
                 <h2 class="text-3xl font-black text-red-400 cinzel-font mb-1">VOCÊ CAIU</h2>
                 <p class="text-slate-300 text-sm mb-5">Sua alma se dissipa na névoa...</p>
                 <button class="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold py-2.5 px-7 rounded-xl shadow-2xl" onclick="Game.respawnPlayer()">
-                    <i class="fa-solid fa-rotate-left mr-1.5"></i> Renascer no Santuário
+                    <i class="fa-solid fa-rotate-left mr-1.5"></i> Renascer na Entrada da Vila
                 </button>
             </div>
         </div>
@@ -828,58 +830,215 @@ class SoundEngine {
         this.ctx = null;
         this.muted = false;
         this._lastFoot = 0;
+        this._unlocked = false;
     }
     init() {
-        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        if (this.ctx.state === 'suspended') this.ctx.resume();
+        try {
+            if (!this.ctx) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+            this._unlocked = true;
+        } catch (e) {}
+        return this.ctx;
+    }
+    _ensure() {
+        if (this.muted) return null;
+        try {
+            if (!this.ctx) this.init();
+            if (!this.ctx) return null;
+            if (this.ctx.state === 'suspended') this.ctx.resume();
+            return this.ctx;
+        } catch (e) {
+            return null;
+        }
     }
     _tone(type, freq, dur, vol, ramp = true) {
-        if (this.muted || !this.ctx) return;
-        const o = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        o.type = type;
-        o.frequency.setValueAtTime(freq, this.ctx.currentTime);
-        if (ramp) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq * 0.25), this.ctx.currentTime + dur);
-        g.gain.setValueAtTime(vol, this.ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
-        o.connect(g); g.connect(this.ctx.destination);
-        o.start(); o.stop(this.ctx.currentTime + dur);
+        const ctx = this._ensure();
+        if (!ctx) return;
+        try {
+            const t0 = ctx.currentTime;
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            o.type = type || 'sine';
+            const f0 = Math.max(40, +freq || 220);
+            o.frequency.setValueAtTime(f0, t0);
+            if (ramp) {
+                try {
+                    o.frequency.exponentialRampToValueAtTime(Math.max(40, f0 * 0.35), t0 + dur);
+                } catch (err) {
+                    o.frequency.linearRampToValueAtTime(Math.max(40, f0 * 0.35), t0 + dur);
+                }
+            }
+            const v = Math.max(0.01, +vol || 0.2);
+            g.gain.setValueAtTime(0.0001, t0);
+            g.gain.linearRampToValueAtTime(v, t0 + 0.012);
+            g.gain.linearRampToValueAtTime(0.0001, t0 + Math.max(0.03, dur));
+            o.connect(g);
+            g.connect(ctx.destination);
+            o.start(t0);
+            o.stop(t0 + dur + 0.05);
+        } catch (e) {}
+    }
+    _noise(dur, vol, freqStart, freqEnd, type = 'bandpass') {
+        const ctx = this._ensure();
+        if (!ctx) return;
+        try {
+            const t0 = ctx.currentTime;
+            const n = Math.max(1, Math.floor(ctx.sampleRate * dur));
+            const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+            const src = ctx.createBufferSource();
+            src.buffer = buf;
+            const f = ctx.createBiquadFilter();
+            f.type = type || 'bandpass';
+            const fs = Math.max(60, +freqStart || 500);
+            f.frequency.setValueAtTime(fs, t0);
+            if (freqEnd) {
+                try {
+                    f.frequency.exponentialRampToValueAtTime(Math.max(60, +freqEnd), t0 + dur * 0.9);
+                } catch (err) {
+                    f.frequency.linearRampToValueAtTime(Math.max(60, +freqEnd), t0 + dur * 0.9);
+                }
+            }
+            const g = ctx.createGain();
+            const v = Math.max(0.01, +vol || 0.2);
+            g.gain.setValueAtTime(0.0001, t0);
+            g.gain.linearRampToValueAtTime(v, t0 + 0.01);
+            g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+            src.connect(f);
+            f.connect(g);
+            g.connect(ctx.destination);
+            src.start(t0);
+        } catch (e) {}
     }
     playFootstep() {
         const now = performance.now();
         if (now - this._lastFoot < 280) return;
         this._lastFoot = now;
-        this._tone('triangle', 110 + Math.random() * 30, 0.07, 0.1);
+        this._tone('triangle', 100 + Math.random() * 40, 0.08, 0.18);
     }
     playSwordSwing() {
-        if (this.muted || !this.ctx) return;
-        const n = this.ctx.sampleRate * 0.1;
-        const buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
-        const d = buf.getChannelData(0);
-        for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
-        const src = this.ctx.createBufferSource();
-        src.buffer = buf;
-        const f = this.ctx.createBiquadFilter();
-        f.type = 'bandpass';
-        f.frequency.setValueAtTime(900, this.ctx.currentTime);
-        f.frequency.exponentialRampToValueAtTime(2200, this.ctx.currentTime + 0.08);
-        const g = this.ctx.createGain();
-        g.gain.setValueAtTime(0.28, this.ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
-        src.connect(f); f.connect(g); g.connect(this.ctx.destination);
-        src.start();
+        this._noise(0.14, 0.45, 800, 2400, 'bandpass');
+        this._tone('sawtooth', 300, 0.08, 0.12);
     }
-    playHit() { this._tone('sawtooth', 140, 0.16, 0.3); }
+    playHit() {
+        this._tone('sawtooth', 130, 0.18, 0.45);
+        this._noise(0.1, 0.25, 280, 90, 'lowpass');
+    }
+    playEnemyHit(type) {
+        this._ensure();
+        const t = String(type || '').toLowerCase();
+        // Sons bem distintos e altos
+        if (t === 'goblin') {
+            this._tone('square', 320, 0.12, 0.4);
+            this._tone('square', 240, 0.1, 0.25);
+            this._noise(0.08, 0.2, 800, 300, 'lowpass');
+        } else if (t === 'skeleton') {
+            this._noise(0.2, 0.5, 2500, 400, 'bandpass');
+            this._tone('triangle', 70, 0.15, 0.3);
+            setTimeout(() => this._noise(0.08, 0.3, 1800, 500, 'highpass'), 40);
+        } else if (t === 'wolf') {
+            this._tone('sawtooth', 160, 0.28, 0.4);
+            this._tone('sine', 70, 0.35, 0.25);
+            this._noise(0.12, 0.2, 400, 150, 'lowpass');
+        } else if (t === 'spider') {
+            this._noise(0.18, 0.4, 4000, 900, 'highpass');
+            this._tone('square', 500, 0.07, 0.22);
+            setTimeout(() => this._tone('square', 380, 0.07, 0.18), 50);
+        } else if (t === 'orc' || t === 'troll' || t === 'bandit') {
+            this._tone('sawtooth', 55, 0.3, 0.55);
+            this._noise(0.22, 0.35, 200, 60, 'lowpass');
+            this._tone('triangle', 40, 0.25, 0.2);
+        } else if (t === 'shadow' || t === 'dark_mage') {
+            this._tone('sine', 90, 0.35, 0.35);
+            this._tone('triangle', 45, 0.4, 0.22);
+            this._noise(0.25, 0.2, 500, 100, 'lowpass');
+            setTimeout(() => this._tone('sine', 120, 0.2, 0.2), 80);
+        } else if (t === 'golem') {
+            this._tone('sawtooth', 45, 0.35, 0.5);
+            this._noise(0.25, 0.4, 150, 50, 'lowpass');
+        } else {
+            this.playHit();
+        }
+    }
     playPickup() {
-        if (this.muted || !this.ctx) return;
-        [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this._tone('sine', f, 0.08, 0.1, false), i * 40));
+        this._ensure();
+        [523, 659, 784, 1047].forEach((f, i) => {
+            setTimeout(() => this._tone('sine', f, 0.12, 0.22, false), i * 45);
+        });
+    }
+    playCollect(type) {
+        this._ensure();
+        const t = String(type || '').toLowerCase();
+        if (t === 'crystal' || t === 'cristal') {
+            // Arpejo cristalino bem audível
+            [784, 988, 1175, 1568, 2093].forEach((f, i) => {
+                setTimeout(() => this._tone('sine', f, 0.16, 0.28, false), i * 50);
+            });
+        } else if (t === 'ore' || t === 'minerio' || t === 'minério') {
+            this._noise(0.18, 0.45, 500, 120, 'bandpass');
+            this._tone('triangle', 150, 0.14, 0.3);
+            setTimeout(() => {
+                this._tone('square', 110, 0.12, 0.22);
+                this._noise(0.1, 0.25, 300, 80, 'lowpass');
+            }, 60);
+        } else if (t === 'herb' || t === 'erva') {
+            this._noise(0.12, 0.2, 2800, 1000, 'highpass');
+            [392, 523, 659].forEach((f, i) => {
+                setTimeout(() => this._tone('sine', f, 0.14, 0.22, false), i * 55);
+            });
+        } else if (t === 'wood' || t === 'tree' || t === 'arvore' || t === 'madeira') {
+            this._noise(0.25, 0.45, 300, 70, 'lowpass');
+            this._tone('triangle', 70, 0.2, 0.3);
+            setTimeout(() => this._noise(0.15, 0.3, 200, 50, 'lowpass'), 80);
+        } else if (t === 'chest' || t === 'bau' || t === 'baú') {
+            this._noise(0.18, 0.4, 600, 150, 'bandpass');
+            [523, 659, 784, 1047].forEach((f, i) => {
+                setTimeout(() => this._tone('triangle', f, 0.14, 0.25, false), i * 60);
+            });
+        } else if (t === 'carriage' || t === 'parte') {
+            this._tone('square', 200, 0.12, 0.35);
+            setTimeout(() => this._tone('triangle', 340, 0.15, 0.28), 55);
+            setTimeout(() => this._tone('sine', 500, 0.1, 0.2), 110);
+        } else {
+            this.playPickup();
+        }
+    }
+    playChop() {
+        this._ensure();
+        this._noise(0.18, 0.5, 400, 90, 'lowpass');
+        this._tone('triangle', 85 + Math.random() * 30, 0.16, 0.35);
+        setTimeout(() => this._noise(0.1, 0.25, 250, 70, 'lowpass'), 50);
     }
     playLevelUp() {
-        if (this.muted || !this.ctx) return;
-        [262, 330, 392, 523, 659].forEach((f, i) => setTimeout(() => this._tone('triangle', f, 0.22, 0.15, false), i * 65));
+        this._ensure();
+        [262, 330, 392, 523, 659, 784].forEach((f, i) => {
+            setTimeout(() => this._tone('triangle', f, 0.28, 0.28, false), i * 70);
+        });
+    }
+    playWhoosh() {
+        this._noise(0.22, 0.3, 500, 2000, 'bandpass');
     }
 }
 const Sound = new SoundEngine();
+window.Sound = Sound;
+
+// Desbloqueia áudio no primeiro gesto do usuário (obrigatório no mobile/iOS)
+(function unlockAudioOnce() {
+    const unlock = () => {
+        try { Sound.init(); } catch (e) {}
+        ['pointerdown', 'touchstart', 'keydown', 'click'].forEach(ev =>
+            document.removeEventListener(ev, unlock, true)
+        );
+    };
+    ['pointerdown', 'touchstart', 'keydown', 'click'].forEach(ev =>
+        document.addEventListener(ev, unlock, { capture: true, passive: true })
+    );
+})();
 
 // ============== TEMP VECTORS ==============
 const tmpV = new THREE.Vector3();
@@ -910,7 +1069,7 @@ class OrbitCamera {
                 this.yaw -= e.movementX * 0.0028;
                 const minP = this.firstPerson ? this.fpMinPitch : this.minPitch;
                 const maxP = this.firstPerson ? this.fpMaxPitch : this.maxPitch;
-                this.pitch = Math.max(minP, Math.min(maxP, this.pitch + e.movementY * 0.0028));
+                this.pitch = Math.max(minP, Math.min(maxP, this.pitch - e.movementY * 0.0028));
             }
         });
     }
@@ -1116,32 +1275,7 @@ class OrbitCamera {
 }
 
 // ============== QUESTS ==============
-class QuestManager {
-    constructor() {
-        this.idx = 0;
-        this.quests = [
-            { id: 'q1', title: 'Primeiros Passos', desc: 'Fale com o Ancião Marcus na vila.', target: 'npc_marcus', need: 1, cur: 0, done: false },
-            { id: 'q2', title: 'Limpeza na Floresta', desc: 'Derrote 3 Goblins ao norte.', target: 'goblin', need: 3, cur: 0, done: false },
-            { id: 'q3', title: 'Cristais de Eldoria', desc: 'Colete 3 Cristais Místicos.', target: 'crystal', need: 3, cur: 0, done: false },
-            { id: 'q4', title: 'Ameaça das Sombras', desc: 'Derrote a Besta das Sombras.', target: 'shadow', need: 1, cur: 0, done: false }
-        ];
-    }
-    current() { return this.quests[this.idx] || null; }
-    progress(type, n = 1) {
-        const q = this.current();
-        if (!q || q.done || q.target !== type) return;
-        q.cur = Math.min(q.need, q.cur + n);
-        if (q.cur >= q.need) {
-            q.done = true;
-            Game.showToast(`MISSÃO: ${q.title}!`, 'amber');
-            Sound.playLevelUp();
-            Game.player.gold += 40;
-            Game.player.gainXP(20);
-            this.idx++;
-        }
-        Game.updateHUDQuests();
-    }
-}
+// QuestManager definido em missoes.js (NPC_QUESTS por NPC)
 
 // ============== PARTICLES ==============
 class ParticleSystem {
@@ -1341,10 +1475,10 @@ class GameEngine {
         } catch (_) {}
         this.inventory = [
             { name: 'Espada de Ferro', type: 'weapon', icon: 'fa-khanda', count: 1, desc: 'Lâmina básica e resistente. Dano 22.', weaponId: 'sword_iron' },
+            { name: 'Machado de Lenhador', type: 'weapon', icon: 'fa-gavel', count: 1, desc: 'Corta árvores e serve em combate. Dano 20.', weaponId: 'axe_woodcutter' },
             { name: 'Poção de Vida', type: 'consumable', icon: 'fa-flask', count: 3, desc: 'Restaura 45 de vida.', effect: 'heal', heal: 45 }
         ];
         this._hudAcc = 0;
-        this._minimapAcc = 0;
         this._fpsAcc = 0;
         this._frames = 0;
         this._lastFps = 60;
@@ -1357,6 +1491,77 @@ class GameEngine {
         this.npcShopManager = null;
         this._mapTransitioning = false;
         this._map1Snapshot = null;
+    }
+
+    /**
+     * Ponto de spawn DEFINITIVO por mapa.
+     * Mapa 1 (vila): logo dentro do portão leste (entrada da vila).
+     */
+    getMapSpawnPosition(mapId) {
+        const id = mapId != null ? mapId : this.mapId;
+        const world = this.world;
+        const h = (x, z) => (world && typeof world.getTerrainHeight === 'function')
+            ? world.getTerrainHeight(x, z) : 2;
+
+        if (id === 2) {
+            return { x: 0, y: h(0, 8), z: 8 };
+        }
+        if (id === 3) {
+            return { x: 0, y: h(0, 6), z: 6 };
+        }
+        // Mapa 1 — mesmo ponto da pré-visualização do menu / Continuar
+        // (0, 8) na praça da vila, ao norte do poço
+        const x = 0, z = 8;
+        return { x, y: h(x, z) + 0.1, z };
+    }
+
+    /** Teleporta o jogador para o spawn do mapa atual (ou mapId informado). */
+    placePlayerAtSpawn(mapId) {
+        if (!this.player) return;
+        const p = this.getMapSpawnPosition(mapId);
+        this.player.position.set(p.x, p.y, p.z);
+        if (this.player.velocity && this.player.velocity.set) this.player.velocity.set(0, 0, 0);
+        if (this.player.group) this.player.group.position.copy(this.player.position);
+    }
+
+    /**
+     * Colisão sólida jogador ↔ NPCs (evita atravessar o corpo de cada um).
+     * Empurra ambos um pouco; NPCs respeitam colisores do mundo em seguida.
+     */
+    _resolvePlayerNpcCollisions() {
+        if (!this.player) return;
+        const list = (this.npcManager && this.npcManager.npcs) ? this.npcManager.npcs : null;
+        if (!list || !list.length) return;
+
+        const px = this.player.position.x;
+        const pz = this.player.position.z;
+        const playerR = 0.55;
+
+        for (let i = 0; i < list.length; i++) {
+            const npc = list[i];
+            if (!npc || !npc.position) continue;
+            const npcR = npc.bodyRadius || 0.55;
+            let dx = px - npc.position.x;
+            let dz = pz - npc.position.z;
+            let dist = Math.hypot(dx, dz);
+            const minD = playerR + npcR;
+            if (dist >= minD) continue;
+            if (dist < 0.001) { dx = 1; dz = 0; dist = 0.001; }
+            const push = (minD - dist);
+            const nx = dx / dist;
+            const nz = dz / dist;
+            // Jogador leva a maior parte do empurrão (controle mais responsivo)
+            this.player.position.x += nx * push * 0.75;
+            this.player.position.z += nz * push * 0.75;
+            npc.position.x -= nx * push * 0.25;
+            npc.position.z -= nz * push * 0.25;
+            if (typeof npc._resolveColliders === 'function') npc._resolveColliders();
+            if (npc.world && typeof npc.world.getTerrainHeight === 'function') {
+                npc.position.y = npc.world.getTerrainHeight(npc.position.x, npc.position.z);
+            }
+            if (npc.group) npc.group.position.copy(npc.position);
+        }
+        if (this.player.group) this.player.group.position.copy(this.player.position);
     }
 
     async init() {
@@ -1486,6 +1691,19 @@ class GameEngine {
     }
 
     setupNPCs() {
+        // Remove NPCs antigos da cena (evita clones ao clicar em Novo Jogo)
+        if (this.npcManager && typeof this.npcManager.dispose === 'function') {
+            try { this.npcManager.dispose(); } catch (_) {}
+        } else if (this.elder && typeof this.elder.dispose === 'function') {
+            try { this.elder.dispose(); } catch (_) {}
+        } else if (Array.isArray(this.npcs)) {
+            for (const n of this.npcs) {
+                const mesh = n && (n.mesh || n.group);
+                if (mesh && this.scene) {
+                    this.scene.remove(mesh);
+                }
+            }
+        }
         this.npcs = [];
         this.elder = null;
         this.npcManager = null;
@@ -1555,24 +1773,7 @@ class GameEngine {
                     Sound.init();
                     this._tryPointerLock();
                 } else if (this.player.attack()) {
-                    let hit = false;
-                    if (this.enemyManager) {
-                        const res = this.enemyManager.checkPlayerAttack(
-                            this.player.position, this.player.rotationY, this.player.attackRange
-                        );
-                        if (res.hit) hit = true;
-                    }
-                    if (this.banditManager) {
-                        const res = this.banditManager.checkPlayerAttack(
-                            this.player.position, this.player.rotationY, this.player.attackRange
-                        );
-                        if (res.hit) hit = true;
-                    }
-                    if (hit) {
-                        const ch = document.getElementById('crosshair');
-                        ch.classList.add('hit');
-                        setTimeout(() => ch.classList.remove('hit'), 120);
-                    }
+                    this.resolvePlayerAttack();
                 }
             }
         });
@@ -1586,6 +1787,8 @@ class GameEngine {
         this.isMobile = window.matchMedia('(pointer: coarse)').matches
             || window.matchMedia('(max-width: 900px)').matches
             || ('ontouchstart' in window);
+        // Troca letras de teclado por ícones dos botões no mobile
+        this._updateInputHintsUI();
 
         // Evita scroll/zoom da página durante o jogo
         const preventScroll = (e) => {
@@ -1613,6 +1816,7 @@ class GameEngine {
         // Ataque
         document.getElementById('btn-attack')?.addEventListener('touchstart', e => {
             e.preventDefault(); e.stopPropagation();
+            try { Sound.init(); } catch (err) {}
             this._mobileAttack();
         }, { passive: false });
         document.getElementById('btn-attack')?.addEventListener('mousedown', e => {
@@ -1622,6 +1826,7 @@ class GameEngine {
         // Interagir
         document.getElementById('btn-interact')?.addEventListener('touchstart', e => {
             e.preventDefault(); e.stopPropagation();
+            try { Sound.init(); } catch (err) {}
             this.checkInteractions();
         }, { passive: false });
 
@@ -1710,6 +1915,7 @@ class GameEngine {
 
         const lookStart = (clientX, clientY, touchId) => {
             if (!this.gameStarted || this.isPaused) return;
+            try { Sound.init(); } catch (e) {}
             // Não captura se o toque for em botão de ação
             this._look.active = true;
             this._look.id = touchId;
@@ -1725,7 +1931,8 @@ class GameEngine {
             this.orbitCam.yaw -= dx * lookSens;
             const minP = this.orbitCam.firstPerson ? this.orbitCam.fpMinPitch : this.orbitCam.minPitch;
             const maxP = this.orbitCam.firstPerson ? this.orbitCam.fpMaxPitch : this.orbitCam.maxPitch;
-            this.orbitCam.pitch = Math.max(minP, Math.min(maxP, this.orbitCam.pitch + dy * lookSens));
+            // Mesmo sinal do mouse (pitch -= dy): deslizar para cima olha para cima
+            this.orbitCam.pitch = Math.max(minP, Math.min(maxP, this.orbitCam.pitch - dy * lookSens));
         };
         const lookEnd = () => {
             this._look.active = false;
@@ -1788,67 +1995,218 @@ class GameEngine {
     _mobileAttack() {
         if (!this.player || this.isPaused) return;
         if (this.player.attack()) {
-            let hit = false;
-            if (this.enemyManager) {
-                const res = this.enemyManager.checkPlayerAttack(
-                    this.player.position, this.player.rotationY, this.player.attackRange
-                );
-                if (res.hit) hit = true;
+            this.resolvePlayerAttack();
+        }
+    }
+
+    /** Resolve hits de combate + corte de árvores (machado). */
+    resolvePlayerAttack() {
+        if (!this.player) return;
+        try { if (typeof Sound !== 'undefined') Sound.init(); } catch (e) {}
+        let hit = false;
+
+        if (this.enemyManager) {
+            const res = this.enemyManager.checkPlayerAttack(
+                this.player.position, this.player.rotationY, this.player.attackRange
+            );
+            if (res && res.hit) hit = true;
+        }
+        if (this.banditManager) {
+            const res = this.banditManager.checkPlayerAttack(
+                this.player.position, this.player.rotationY, this.player.attackRange
+            );
+            if (res && res.hit) hit = true;
+        }
+        if (this.golemManager && typeof this.golemManager.checkPlayerAttack === 'function') {
+            const res = this.golemManager.checkPlayerAttack(
+                this.player.position, this.player.rotationY, this.player.attackRange
+            );
+            if (res && res.hit) hit = true;
+        }
+
+        // Corte de árvore — só com machado equipado
+        if (this._tryChopWithAxe()) hit = true;
+
+        if (hit) {
+            const ch = document.getElementById('crosshair');
+            if (ch) {
+                ch.classList.add('hit');
+                setTimeout(() => ch.classList.remove('hit'), 120);
             }
-            if (this.banditManager) {
-                const res = this.banditManager.checkPlayerAttack(
-                    this.player.position, this.player.rotationY, this.player.attackRange
-                );
-                if (res.hit) hit = true;
+        }
+    }
+
+    /** Retorna true se a arma atual é um machado. */
+    _playerHasAxe() {
+        const wid = this.player && this.player.weaponId;
+        if (!wid) return false;
+        if (typeof getWeaponById === 'function') {
+            const def = getWeaponById(wid);
+            if (def && def.category === 'axe') return true;
+        }
+        return String(wid).toLowerCase().indexOf('axe') >= 0 ||
+            String(wid).toLowerCase().indexOf('machado') >= 0;
+    }
+
+    /**
+     * Tenta cortar árvore próxima se o jogador usa machado.
+     * @returns {boolean} true se acertou uma árvore
+     */
+    _tryChopWithAxe() {
+        if (!this._playerHasAxe()) return false;
+        const trees = this.world && this.world._trees;
+        if (!trees || typeof trees.tryChop !== 'function') return false;
+
+        const range = Math.max(2.8, (this.player.attackRange || 3.2) * 0.95);
+        const res = trees.tryChop(this.player.position.x, this.player.position.z, range);
+        if (!res) return false;
+
+        const px = res.x, pz = res.z;
+        const gy = this.world.getTerrainHeight
+            ? this.world.getTerrainHeight(px, pz)
+            : this.player.position.y;
+
+        if (!res.chopped) {
+            this.showToast(`Árvore: mais ${res.hitsLeft} golpe(s)`, 'amber');
+            if (typeof this.spawnParticles === 'function') {
+                this.spawnParticles({ x: px, y: gy + 1.2, z: pz }, 0x5c4033, 6);
             }
-            if (hit) {
-                const ch = document.getElementById('crosshair');
-                if (ch) {
-                    ch.classList.add('hit');
-                    setTimeout(() => ch.classList.remove('hit'), 120);
-                }
+            if (typeof Sound !== 'undefined') Sound.playChop?.();
+            return true;
+        }
+
+        // Árvore derrubada → madeira no inventário
+        const wood = res.wood || 2;
+        this.addItem(
+            'Madeira',
+            'materials',
+            'fa-tree',
+            wood,
+            'Tora de madeira fresca. Venda ao fazendeiro Tomás.',
+            null,
+            null,
+            { itemId: 'wood', sellGold: 4 }
+        );
+        this.showToast(`Árvore cortada! +${wood} Madeira`, 'amber');
+        if (typeof this.spawnParticles === 'function') {
+            this.spawnParticles({ x: px, y: gy + 1.5, z: pz }, 0x4a3728, 14);
+            this.spawnParticles({ x: px, y: gy + 2.2, z: pz }, 0x1b4332, 10);
+        }
+        if (typeof Sound !== 'undefined') Sound.playCollect?.('wood');
+        return true;
+    }
+
+    /** Conta quanta madeira o jogador tem no inventário. */
+    _countWood() {
+        if (!this.inventory) return 0;
+        let n = 0;
+        for (const it of this.inventory) {
+            if (!it) continue;
+            const name = (it.name || '').toLowerCase();
+            const id = (it.itemId || '').toLowerCase();
+            if (id === 'wood' || name === 'madeira' || name.indexOf('madeira') >= 0) {
+                n += it.count || 0;
             }
+        }
+        return n;
+    }
+
+    /** Remove madeira do inventário e retorna quantas unidades foram removidas. */
+    _takeWood(amount) {
+        if (!this.inventory || amount <= 0) return 0;
+        let left = amount;
+        let taken = 0;
+        for (let i = this.inventory.length - 1; i >= 0 && left > 0; i--) {
+            const it = this.inventory[i];
+            if (!it) continue;
+            const name = (it.name || '').toLowerCase();
+            const id = (it.itemId || '').toLowerCase();
+            if (id !== 'wood' && name !== 'madeira' && name.indexOf('madeira') < 0) continue;
+            const use = Math.min(left, it.count || 0);
+            it.count -= use;
+            left -= use;
+            taken += use;
+            if (it.count <= 0) this.inventory.splice(i, 1);
+        }
+        return taken;
+    }
+
+    /** Vende toda a madeira para o fazendeiro (4 ouro cada). */
+    sellWoodToFarmer() {
+        const wood = this._countWood();
+        if (wood <= 0) {
+            this.showToast('Você não tem madeira para vender.', 'amber');
+            return;
+        }
+        const price = 4;
+        const taken = this._takeWood(wood);
+        const gold = taken * price;
+        if (this.player) this.player.gold = (this.player.gold || 0) + gold;
+        this.showToast(`Vendeu ${taken} madeira por ${gold} ouro!`, 'amber');
+        if (typeof this.syncHUD === 'function') this.syncHUD();
+        if (typeof this.renderInventory === 'function') this.renderInventory();
+        // Atualiza texto do diálogo
+        const d = document.getElementById('npc-dialogue-text');
+        if (d) {
+            d.textContent = `Obrigado pelas ${taken} toras! Aqui estão ${gold} moedas. A vila agradece, lenhador.`;
+        }
+        const sellBtn = document.getElementById('btn-sell-wood');
+        if (sellBtn) {
+            sellBtn.disabled = true;
+            sellBtn.classList.add('opacity-50');
+            sellBtn.innerHTML = '<i class="fa-solid fa-check"></i> Madeira vendida';
         }
     }
 
     startGame(cont) {
         Sound.init();
-        this.gameStarted = true;
+        setTimeout(() => { try { Sound.playPickup(); } catch (e) {} }, 120);
         document.getElementById('main-menu').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         document.getElementById('mobile-controls').classList.remove('hidden');
         if (typeof this.syncSpellHotbar === 'function') this.syncSpellHotbar();
+        if (typeof this._updateInputHintsUI === 'function') this._updateInputHintsUI();
         if (cont) {
+            this.gameStarted = true;
             this.loadProgress();
+            this._tryPointerLock();
         } else {
-            // Nova Jornada — zera progresso em memória + save
+            // Nova Jornada — reset total (mundo + save)
             this.startNewGame();
         }
-        this._tryPointerLock();
     }
 
-    /** Reinicia personagem, inventário, missões e sobrescreve o save */
-    startNewGame() {
-        // Inventário inicial
+    /**
+     * Reinicia TUDO: personagem, inventário, missões, mapa, inimigos, colecionáveis e save.
+     * Se o mundo já foi modificado nesta sessão, reconstrói o mapa 1 do zero.
+     */
+    async startNewGame() {
+        this.isPaused = true;
+        this.showToast('Iniciando nova jornada...', 'amber');
+
+        // 1) Apaga save antigo para não “continuar” o progresso anterior
+        try {
+            const key = (typeof CONFIG !== 'undefined' && CONFIG.saveKey) ? CONFIG.saveKey : 'wilds_v2_save';
+            localStorage.removeItem(key);
+            localStorage.removeItem('wilds_v2_save');
+        } catch (_) {}
+
+        // 2) Inventário inicial
         this.inventory = [
             { name: 'Espada de Ferro', type: 'weapon', icon: 'fa-khanda', count: 1, desc: 'Lâmina básica e resistente. Dano 22.', weaponId: 'sword_iron' },
+            { name: 'Machado de Lenhador', type: 'weapon', icon: 'fa-gavel', count: 1, desc: 'Corta árvores e serve em combate. Dano 20.', weaponId: 'axe_woodcutter' },
             { name: 'Poção de Vida', type: 'consumable', icon: 'fa-flask', count: 3, desc: 'Restaura 45 de vida.', effect: 'heal', heal: 45 }
         ];
-        // Missões
+
+        // 3) Missões e quests especiais
         if (this.questManager) {
             this.questManager.idx = 0;
             if (typeof this.questManager.reset === 'function') this.questManager.reset();
         }
-        // Tempo do dia
+        this._carriageQuest = { collected: 0, status: 'available', need: 3 };
         this.dayTime = 0.25;
-        // Baús fechados de novo (se ainda existirem no mundo)
-        if (this.world && Array.isArray(this.world.chests)) {
-            for (const c of this.world.chests) {
-                c.opened = false;
-                if (c.mesh) c.mesh.visible = true;
-            }
-        }
-        // Personagem do zero
+
+        // 4) Personagem do zero (posição final = praça da vila via placePlayerAtSpawn)
         if (this.player && typeof this.player.resetNewGame === 'function') {
             this.player.resetNewGame(0, 8);
         } else if (this.player) {
@@ -1860,31 +2218,121 @@ class GameEngine {
             this.player.stamina = this.player.maxStamina = 100;
             this.player.position.set(0, 2, 8);
         }
-        // Skin escolhida no menu
         try {
             const pref = localStorage.getItem('wilds_menu_skin') || this._menuSkinId || 'guerreiro';
-            if (this.player && typeof applySkinToPlayer === 'function') {
-                applySkinToPlayer(this.player, pref);
-            }
-            if (this.player && typeof applyWeaponToPlayer === 'function') {
-                applyWeaponToPlayer(this.player, 'sword_iron');
-            }
+            if (this.player && typeof applySkinToPlayer === 'function') applySkinToPlayer(this.player, pref);
+            if (this.player && typeof applyWeaponToPlayer === 'function') applyWeaponToPlayer(this.player, 'sword_iron');
         } catch (_) {}
-        // Volta ao mapa 1 se estiver em outro
-        if (this.mapId && this.mapId !== 1 && typeof this.loadMap === 'function') {
-            try { this.loadMap(1); } catch (_) {}
+
+        // 5) Reconstrói o mundo do mapa 1 (cristais, minérios, ervas, baús, inimigos)
+        try {
+            await this._rebuildMap1ForNewGame();
+        } catch (err) {
+            console.warn('Falha ao reconstruir mapa na nova jornada:', err);
+            this.mapId = 1;
+            // Fallback: tenta só resetar baús / inimigos no lugar
+            if (this.world && Array.isArray(this.world.chests)) {
+                for (const c of this.world.chests) {
+                    if (c.userData) c.userData.opened = false;
+                    c.opened = false;
+                    if (c.visible === false) c.visible = true;
+                    if (c.mesh) c.mesh.visible = true;
+                }
+            }
+            if (this.enemyManager) {
+                if (typeof this.enemyManager.dispose === 'function') this.enemyManager.dispose();
+                if (typeof this.enemyManager.spawn === 'function') {
+                    try { await this.enemyManager.spawn(() => {}); } catch (_) {}
+                }
+            }
         }
-        this.mapId = 1;
-        // Grava save limpo (e habilita Continuar com o save novo)
+
+        // 6) Save limpo + UI
+        this.gameStarted = true;
+        this.isPaused = false;
         this.saveProgress(false);
         try {
-            const key = (typeof CONFIG !== 'undefined' && CONFIG.saveKey) ? CONFIG.saveKey : 'wilds_v2_save';
-            // Continuar permanece habilitado, mas aponta para o save novo
             document.getElementById('btn-continue-game')?.removeAttribute('disabled');
         } catch (_) {}
         this.updateHUDQuests?.();
         this.syncHUD?.();
         this.showToast('Nova jornada iniciada!', 'amber');
+        this._tryPointerLock();
+    }
+
+    /** Descarta mundo atual e monta mapa 1 fresco (colecionáveis + inimigos). */
+    async _rebuildMap1ForNewGame() {
+        if (typeof WorldMap === 'undefined') {
+            this.mapId = 1;
+            return;
+        }
+
+        // Limpa managers
+        if (this.banditManager && typeof this.banditManager.dispose === 'function') {
+            this.banditManager.dispose();
+            this.banditManager = null;
+        }
+        if (this.golemManager && typeof this.golemManager.dispose === 'function') {
+            try { this.golemManager.dispose(); } catch (_) {}
+        }
+        if (this.enemyManager) {
+            if (typeof this.enemyManager.dispose === 'function') {
+                this.enemyManager.dispose();
+            } else if (this.enemyManager.enemies) {
+                for (const e of this.enemyManager.enemies.slice()) {
+                    if (e.mesh) this.scene.remove(e.mesh);
+                    if (e.group) this.scene.remove(e.group);
+                }
+                this.enemyManager.enemies = [];
+            }
+            this.enemyManager = null;
+        }
+
+        // Remove NPC/markers de missão da carruagem
+        if (this._carriageNpcMesh) {
+            this.scene.remove(this._carriageNpcMesh);
+            this._carriageNpcMesh = null;
+        }
+        const garrickMarker = this.scene.getObjectByName('garrick_marker');
+        if (garrickMarker) this.scene.remove(garrickMarker);
+        this.npcs = (this.npcs || []).filter(n => n && n.id !== 'npc_garrick');
+
+        // Descarta mundo antigo e cria mapa 1 novo
+        if (this.world && typeof this.world.dispose === 'function') {
+            this.world.dispose();
+        }
+        this.world = new WorldMap(this.scene);
+        await this.world.build(() => {});
+        if (this.player) this.player.world = this.world;
+        this.mapId = 1;
+
+        // Spawn definitivo: entrada da vila (portão leste)
+        this.placePlayerAtSpawn(1);
+
+        // NPCs, lojas e inimigos frescos
+        if (typeof this.setupNPCs === 'function') this.setupNPCs();
+        if (typeof this.setupBlacksmithShop === 'function') await this.setupBlacksmithShop();
+        if (typeof this.setupNpcShops === 'function') await this.setupNpcShops();
+
+        if (typeof EnemyManager !== 'undefined') {
+            this.enemyManager = new EnemyManager(this.scene, this.world, this.player, {
+                onPlayerHit: (dmg) => {
+                    const o = document.getElementById('damage-overlay');
+                    if (o) {
+                        o.style.opacity = '1';
+                        setTimeout(() => o.style.opacity = '0', 200);
+                    }
+                    if (this.player && this.player.hp <= 0) this.triggerPlayerDeath();
+                }
+            });
+            if (typeof this.enemyManager.spawn === 'function') {
+                await this.enemyManager.spawn(() => {});
+            }
+        }
+        if (typeof GolemManager !== 'undefined' && !this.golemManager) {
+            this.golemManager = new GolemManager(this.scene, this.world, this.player);
+        }
+        if (this.player) this.player.world = this.world;
     }
 
     _tryPointerLock() {
@@ -1923,12 +2371,18 @@ class GameEngine {
                 this.npcManager.update(dt, this.player.position);
                 // Mantém lista de diálogo sincronizada com posições atuais
                 this.npcs = this.npcManager.getDialogueList();
+                this._resolvePlayerNpcCollisions();
             } else if (this.elder) {
                 this.elder.update(dt, this.player.position);
                 if (this.npcs[0]) this.npcs[0].mesh = this.elder.mesh;
+                this._resolvePlayerNpcCollisions();
             }
             this.particles.update(dt);
             this.world.update(time * 0.001);
+            // Animação de árvores caindo
+            if (this.world && this.world._trees && typeof this.world._trees.update === 'function') {
+                this.world._trees.update(dt);
+            }
             if (this.blacksmithShop && typeof this.blacksmithShop.update === 'function') {
                 this.blacksmithShop.update(time * 0.001);
             }
@@ -1936,15 +2390,10 @@ class GameEngine {
                 this.npcShopManager.update(time * 0.001);
             }
             this._hudAcc += dt;
-            this._minimapAcc += dt;
             if (this._hudAcc > 0.08) {
                 this._hudAcc = 0;
                 this.syncHUD();
                 this.updateInteractionsPrompt();
-            }
-            if (this._minimapAcc > 0.12) {
-                this._minimapAcc = 0;
-                this.renderMinimap();
             }
             this.renderer.render(this.scene, this.camera);
         } else if (!this.gameStarted) {
@@ -2658,15 +3107,8 @@ class GameEngine {
             this.player.world = this.world;
             this.mapId = 1;
 
-            // Spawn logo dentro do portão (leste)
-            const cfg = this.world.cfg || {};
-            const R = cfg.wallRadius || 130;
-            const gateA = cfg.gateAngle != null ? cfg.gateAngle : Math.PI / 2;
-            const sx = Math.sin(gateA) * (R - 10);
-            const sz = Math.cos(gateA) * (R - 10);
-            const sy = this.world.getTerrainHeight(sx, sz);
-            this.player.position.set(sx, sy, sz);
-            if (this.player.group) this.player.group.position.copy(this.player.position);
+            // Spawn definitivo: entrada da vila
+            this.placePlayerAtSpawn(1);
 
             // NPCs e inimigos de volta
             this.setupNPCs();
@@ -3253,6 +3695,7 @@ class GameEngine {
 
     checkInteractions() {
         if (!this.player || this.isPaused) return;
+        try { if (typeof Sound !== 'undefined') Sound.init(); } catch (e) {}
         const pp = this.player.position;
         const distNpc = (typeof CONFIG !== 'undefined' && CONFIG.interactDistance) ? CONFIG.interactDistance.npc : 3.4;
         const distCol = (typeof CONFIG !== 'undefined' && CONFIG.interactDistance) ? CONFIG.interactDistance.collectible : 2.4;
@@ -3319,9 +3762,16 @@ class GameEngine {
                     this._handleCarriageNPCTalk(npc);
                     return;
                 }
-                // Falar com o NPC (lojas ficam nos prédios)
+                // Falar com o NPC (missões + diálogo)
+                if (this.questManager && typeof this.questManager.handleNpcTalk === 'function') {
+                    const res = this.questManager.handleNpcTalk(npc.id || '');
+                    if (res && res.speech) {
+                        this.openDialogue(Object.assign({}, npc, { dialogue: res.speech }));
+                        this.updateHUDQuests?.();
+                        return;
+                    }
+                }
                 this.openDialogue(npc);
-                if (this.questManager) this.questManager.progress(npc.id || 'npc_marcus');
                 return;
             }
         }
@@ -3345,7 +3795,6 @@ class GameEngine {
                         this.scene.remove(c);
                         this.world.collectibles.splice(i, 1);
                     }
-                    if (typeof Sound !== 'undefined') Sound.playPickup?.();
 
                     if (ud.type === 'carriage_part') {
                         if (!this._carriageQuest) this._carriageQuest = { collected: 0, status: 'available', need: 3 };
@@ -3356,6 +3805,7 @@ class GameEngine {
                             this.addItem(ud.label || 'Parte da Carruagem', 'materials', 'fa-cog', 1, 'Peça recuperada da carruagem destruída.');
                             this.showToast(`${ud.label || 'Parte'} coletada! (${q.collected}/${q.need})`, 'amber');
                             this.spawnParticles(c.position, 0xf59e0b, 12);
+                            if (typeof Sound !== 'undefined') Sound.playCollect?.('carriage');
                             if (q.collected >= q.need) {
                                 q.status = 'ready';
                                 this.showToast('Todas as partes! Volte a falar com Garrick.', 'amber');
@@ -3363,10 +3813,26 @@ class GameEngine {
                             this._updateCarriageDialogue();
                         }
                     } else {
-                        this.addItem('Cristal Místico', 'materials', 'fa-gem', 1, 'Cristal energizado.');
-                        this.questManager?.progress('crystal');
-                        this.showToast('Cristal coletado!', 'amber');
-                        this.spawnParticles(c.position, 0x00f0ff, 10);
+                        const ctype = (ud.type || 'crystal').toLowerCase();
+                        if (ctype === 'ore' || ctype === 'minerio' || ctype === 'minério') {
+                            this.addItem('Minério', 'materials', 'fa-cube', 1, 'Minério bruto da floresta.');
+                            this.questManager?.progress('ore');
+                            this.showToast('Minério coletado!', 'amber');
+                            this.spawnParticles(c.position, 0xb45309, 10);
+                            if (typeof Sound !== 'undefined') Sound.playCollect?.('ore');
+                        } else if (ctype === 'herb' || ctype === 'erva') {
+                            this.addItem('Erva Medicinal', 'materials', 'fa-leaf', 1, 'Erva medicinal da floresta.');
+                            this.questManager?.progress('herb');
+                            this.showToast('Erva medicinal coletada!', 'amber');
+                            this.spawnParticles(c.position, 0x22c55e, 10);
+                            if (typeof Sound !== 'undefined') Sound.playCollect?.('herb');
+                        } else {
+                            this.addItem('Cristal Místico', 'materials', 'fa-gem', 1, 'Cristal energizado.');
+                            this.questManager?.progress('crystal');
+                            this.showToast('Cristal coletado!', 'amber');
+                            this.spawnParticles(c.position, 0x00f0ff, 10);
+                            if (typeof Sound !== 'undefined') Sound.playCollect?.('crystal');
+                        }
                     }
                     return;
                 }
@@ -3381,7 +3847,7 @@ class GameEngine {
                     if (c.children && c.children[0] && c.children[0].material) {
                         c.children[0].material.color.setHex(0x4a3728);
                     }
-                    if (typeof Sound !== 'undefined') Sound.playPickup?.();
+                    if (typeof Sound !== 'undefined') Sound.playCollect?.('chest');
                     let chestGold = 120;
                     if (this.player.goldBonusPct) chestGold = Math.round(chestGold * (1 + this.player.goldBonusPct));
                     this.player.gold = (this.player.gold || 0) + chestGold;
@@ -3399,10 +3865,28 @@ class GameEngine {
         if (!npc) return;
         if (typeof CONFIG !== 'undefined' && CONFIG.systems && !CONFIG.systems.dialogue) return;
 
+        this._dialogueNpc = npc;
+
         const open = () => {
             const name = npc.name || 'NPC';
             const title = npc.title || '';
-            const speech = npc.dialogue || '...';
+            let speech = npc.dialogue || '...';
+
+            const isFarmer = (npc.id === 'npc_fazendeiro') ||
+                (npc.profession === 'farmer') ||
+                ((npc.name || '').toLowerCase().indexOf('tomás') >= 0) ||
+                ((npc.name || '').toLowerCase().indexOf('tomas') >= 0) ||
+                ((npc.title || '').toLowerCase().indexOf('fazendeiro') >= 0);
+
+            const woodCount = this._countWood ? this._countWood() : 0;
+            if (isFarmer) {
+                if (woodCount > 0) {
+                    speech += ` Vejo que trouxe ${woodCount} tora(s) de madeira. Posso pagar 4 ouro por cada uma.`;
+                } else {
+                    speech += ' Se cortar árvores com um machado e me trazer a madeira, pago bem por ela.';
+                }
+            }
+
             if (typeof Utils !== 'undefined') {
                 Utils.setText('npc-dialogue-name', name);
                 Utils.setText('npc-dialogue-title', title);
@@ -3414,6 +3898,18 @@ class GameEngine {
                 if (n) n.textContent = name;
                 if (t) t.textContent = title;
                 if (d) d.textContent = speech;
+            }
+
+            const sellBtn = document.getElementById('btn-sell-wood');
+            if (sellBtn) {
+                if (isFarmer && woodCount > 0) {
+                    sellBtn.classList.remove('hidden', 'opacity-50');
+                    sellBtn.disabled = false;
+                    sellBtn.innerHTML = `<i class="fa-solid fa-tree"></i> Vender ${woodCount} madeira (+${woodCount * 4} ouro)`;
+                } else {
+                    sellBtn.classList.add('hidden');
+                    sellBtn.disabled = true;
+                }
             }
         };
 
@@ -4051,239 +4547,7 @@ class GameEngine {
         else this.showToast('Sem poções ou comida!', 'red');
     }
 
-    renderMinimap() {
-        const c = document.getElementById('minimap-canvas');
-        if (!c || !this.player) return;
-        const ctx = c.getContext('2d');
-        const W = c.width || 160;
-        const H = c.height || 160;
-        const center = W * 0.5;
-        const scale = 0.55;
-        const pad = 8;
-        const px = this.player.position.x;
-        const pz = this.player.position.z;
-        const yaw = this.player.rotationY || 0;
-
-        const toMap = (x, z) => ({
-            mx: center + (x - px) * scale,
-            my: center + (z - pz) * scale
-        });
-        const inView = (mx, my) =>
-            mx > pad && mx < W - pad && my > pad && my < H - pad;
-
-        ctx.clearRect(0, 0, W, H);
-
-        // Fundo com gradiente
-        const grad = ctx.createRadialGradient(center, center, 8, center, center, center);
-        grad.addColorStop(0, 'rgba(30, 41, 59, 0.98)');
-        grad.addColorStop(1, 'rgba(15, 23, 42, 0.98)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H);
-
-        // Grade sutil
-        ctx.strokeStyle = 'rgba(71, 85, 105, 0.35)';
-        ctx.lineWidth = 1;
-        for (let i = 1; i < 4; i++) {
-            const t = (i / 4) * W;
-            ctx.beginPath(); ctx.moveTo(t, 0); ctx.lineTo(t, H); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0, t); ctx.lineTo(W, t); ctx.stroke();
-        }
-
-        // Anel de alcance
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(center, center, center - pad, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Muralha / limite do mapa atual (se existir)
-        if (this.world && this.world.cfg && this.world.cfg.wallRadius) {
-            const R = this.world.cfg.wallRadius * scale;
-            const o = toMap(0, 0);
-            ctx.strokeStyle = 'rgba(120, 113, 108, 0.55)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(o.mx, o.my, R, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-        if (this.world && this.world.cfg && this.world.cfg.villageRadius) {
-            const R = this.world.cfg.villageRadius * scale;
-            const o = toMap(0, 0);
-            ctx.strokeStyle = 'rgba(52, 211, 153, 0.3)';
-            ctx.lineWidth = 1.5;
-            ctx.setLineDash([4, 3]);
-            ctx.beginPath();
-            ctx.arc(o.mx, o.my, R, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
-
-        // Helpers de desenho
-        const drawDot = (mx, my, r, color, stroke) => {
-            if (!inView(mx, my)) return;
-            ctx.beginPath();
-            ctx.arc(mx, my, r, 0, Math.PI * 2);
-            ctx.fillStyle = color;
-            ctx.fill();
-            if (stroke) {
-                ctx.strokeStyle = stroke;
-                ctx.lineWidth = 1;
-                ctx.stroke();
-            }
-        };
-        const drawDiamond = (mx, my, s, color) => {
-            if (!inView(mx, my)) return;
-            ctx.beginPath();
-            ctx.moveTo(mx, my - s);
-            ctx.lineTo(mx + s * 0.7, my);
-            ctx.lineTo(mx, my + s);
-            ctx.lineTo(mx - s * 0.7, my);
-            ctx.closePath();
-            ctx.fillStyle = color;
-            ctx.fill();
-            ctx.strokeStyle = 'rgba(255,255,255,0.45)';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        };
-        const drawTriangle = (mx, my, s, color) => {
-            if (!inView(mx, my)) return;
-            ctx.beginPath();
-            ctx.moveTo(mx, my - s);
-            ctx.lineTo(mx + s * 0.85, my + s * 0.7);
-            ctx.lineTo(mx - s * 0.85, my + s * 0.7);
-            ctx.closePath();
-            ctx.fillStyle = color;
-            ctx.fill();
-        };
-        const drawSquare = (mx, my, s, color) => {
-            if (!inView(mx, my)) return;
-            ctx.fillStyle = color;
-            ctx.fillRect(mx - s, my - s, s * 2, s * 2);
-            ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(mx - s, my - s, s * 2, s * 2);
-        };
-
-        // Casas / lojas (colisores)
-        if (this.world && Array.isArray(this.world.colliders)) {
-            for (const col of this.world.colliders) {
-                if (!col) continue;
-                const t = col.type || '';
-                if (t !== 'house' && t.indexOf('shop') < 0 && t !== 'blacksmith_shop' && t !== 'npc_shop') continue;
-                const p = toMap(col.x, col.z);
-                drawSquare(p.mx, p.my, 2.2, 'rgba(120, 113, 108, 0.75)');
-            }
-        }
-
-        // Cristais / colecionáveis
-        if (this.world && Array.isArray(this.world.collectibles)) {
-            for (const col of this.world.collectibles) {
-                if (!col || !col.position) continue;
-                const p = toMap(col.position.x, col.position.z);
-                const isCrystal = (col.userData && col.userData.type === 'crystal') ||
-                    (col.name && String(col.name).toLowerCase().indexOf('crystal') >= 0);
-                if (isCrystal) {
-                    // Brilho
-                    if (inView(p.mx, p.my)) {
-                        ctx.beginPath();
-                        ctx.arc(p.mx, p.my, 5, 0, Math.PI * 2);
-                        ctx.fillStyle = 'rgba(34, 211, 238, 0.25)';
-                        ctx.fill();
-                    }
-                    drawDiamond(p.mx, p.my, 3.5, '#22d3ee');
-                } else {
-                    drawSquare(p.mx, p.my, 2.5, '#b45309');
-                }
-            }
-        }
-
-        // NPCs
-        if (this.npcManager && Array.isArray(this.npcManager.npcs)) {
-            for (const npc of this.npcManager.npcs) {
-                if (!npc || !npc.position) continue;
-                const p = toMap(npc.position.x, npc.position.z);
-                drawDot(p.mx, p.my, 2.4, '#34d399', 'rgba(6, 78, 59, 0.8)');
-            }
-        }
-
-        // Inimigos clássicos
-        if (this.enemyManager && Array.isArray(this.enemyManager.enemies)) {
-            for (const e of this.enemyManager.enemies) {
-                if (!e || e.alive === false) continue;
-                const ep = e.pos || e.position || (e.mesh && e.mesh.position);
-                if (!ep) continue;
-                const p = toMap(ep.x, ep.z);
-                drawTriangle(p.mx, p.my, 3.2, '#ef4444');
-            }
-        }
-
-        // Bandidos
-        if (this.banditManager && Array.isArray(this.banditManager.enemies)) {
-            for (const e of this.banditManager.enemies) {
-                if (!e || e.alive === false) continue;
-                const ep = e.pos || e.position || (e.mesh && e.mesh.position);
-                if (!ep) continue;
-                const p = toMap(ep.x, ep.z);
-                drawTriangle(p.mx, p.my, 3.0, '#f97316');
-            }
-        }
-
-        // Boss
-        if (this.bossManager && this.bossManager.boss) {
-            const b = this.bossManager.boss;
-            if (b && b.alive !== false) {
-                const ep = b.pos || b.position || (b.mesh && b.mesh.position);
-                if (ep) {
-                    const p = toMap(ep.x, ep.z);
-                    if (inView(p.mx, p.my)) {
-                        ctx.beginPath();
-                        ctx.arc(p.mx, p.my, 6, 0, Math.PI * 2);
-                        ctx.fillStyle = 'rgba(168, 85, 247, 0.3)';
-                        ctx.fill();
-                    }
-                    drawDiamond(p.mx, p.my, 5, '#a855f7');
-                }
-            }
-        }
-
-        // Golem aliado
-        if (this.golemManager && Array.isArray(this.golemManager.golems)) {
-            for (const g of this.golemManager.golems) {
-                if (!g || !g.alive) continue;
-                const gp = g.pos || (g.mesh && g.mesh.position);
-                if (!gp) continue;
-                const p = toMap(gp.x, gp.z);
-                drawDot(p.mx, p.my, 3.2, '#a78bfa', 'rgba(91, 33, 182, 0.9)');
-            }
-        }
-
-        // Jogador (seta na direção que olha)
-        ctx.save();
-        ctx.translate(center, center);
-        ctx.rotate(yaw);
-        ctx.beginPath();
-        ctx.moveTo(0, -6);
-        ctx.lineTo(4.5, 5);
-        ctx.lineTo(0, 2.5);
-        ctx.lineTo(-4.5, 5);
-        ctx.closePath();
-        ctx.fillStyle = '#fbbf24';
-        ctx.fill();
-        ctx.strokeStyle = '#78350f';
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-        // núcleo
-        ctx.beginPath();
-        ctx.arc(0, 0, 2, 0, Math.PI * 2);
-        ctx.fillStyle = '#fef3c7';
-        ctx.fill();
-        ctx.restore();
-
-        // Borda do minimapa
-        ctx.strokeStyle = 'rgba(251, 191, 36, 0.35)';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(1, 1, W - 2, H - 2);
-    }
+    renderMinimap() { /* minimapa removido */ }
 
     syncHUD() {
         const p = this.player;
@@ -4424,7 +4688,9 @@ class GameEngine {
         if (typeof Utils !== 'undefined') {
             Utils.applyPreset(this.renderer, this.scene, this.sunLight, preset);
         } else if (this.renderer) {
-            this.renderer.shadowMap.enabled = preset !== 'performance';
+            const enable = preset !== 'performance';
+            this.renderer.shadowMap.enabled = enable;
+            if (this.sunLight) this.sunLight.castShadow = enable;
         }
         const shadowCb = document.getElementById('setting-shadows');
         if (shadowCb && this.renderer) {
@@ -4432,7 +4698,20 @@ class GameEngine {
         }
     }
     toggleShadows(on) {
-        if (this.renderer) this.renderer.shadowMap.enabled = !!on;
+        const enabled = !!on;
+        if (this.renderer) this.renderer.shadowMap.enabled = enabled;
+        if (this.sunLight) {
+            this.sunLight.castShadow = enabled;
+            // Libera o shadow map antigo para as sombras sumirem de imediato
+            if (!enabled && this.sunLight.shadow) {
+                try {
+                    if (this.sunLight.shadow.map) {
+                        this.sunLight.shadow.map.dispose();
+                        this.sunLight.shadow.map = null;
+                    }
+                } catch (_) { /* ignore */ }
+            }
+        }
     }
     setResolutionScale(s) {
         if (!this.renderer) return;
@@ -4520,7 +4799,99 @@ class GameEngine {
             }
         }
     }
-    openControlsModal() { document.getElementById('controls-modal').classList.remove('hidden'); }
+    openControlsModal() {
+        this._fillControlsList();
+        document.getElementById('controls-modal').classList.remove('hidden');
+    }
+
+    /** Detecta mobile (touch) de forma estável */
+    _isMobileDevice() {
+        if (this.isMobile !== undefined) return this.isMobile;
+        this.isMobile = window.matchMedia('(pointer: coarse)').matches
+            || window.matchMedia('(max-width: 900px)').matches
+            || ('ontouchstart' in window);
+        return this.isMobile;
+    }
+
+    /**
+     * Badge do prompt de interação:
+     * PC → tecla E | Mobile → ícone da mão (botão interagir)
+     */
+    _updateInputHintsUI() {
+        const mobile = this._isMobileDevice();
+        const badge = document.getElementById('interaction-key-badge');
+        if (badge) {
+            if (mobile) {
+                badge.innerHTML = '<i class="fa-solid fa-hand"></i>';
+                badge.title = 'Botão Interagir';
+            } else {
+                badge.textContent = 'E';
+                badge.title = 'Tecla E';
+            }
+        }
+        // Esconde números 1-6 da barra de magias no mobile (toque no ícone)
+        document.querySelectorAll('.spell-key-label').forEach(el => {
+            el.style.display = mobile ? 'none' : '';
+        });
+        // Titles das magias sem [1] no mobile
+        document.querySelectorAll('.spell-slot[data-spell]').forEach(slot => {
+            const base = (slot.getAttribute('title') || '').replace(/\s*\[\d+\]\s*$/, '');
+            if (mobile) {
+                slot.setAttribute('title', base);
+            } else {
+                const num = slot.querySelector('.spell-key-label')?.textContent || '';
+                if (num && !/\[\d+\]/.test(slot.getAttribute('title') || '')) {
+                    slot.setAttribute('title', base + ' [' + num + ']');
+                }
+            }
+        });
+    }
+
+    /** Lista de controles: teclado no PC, símbolos dos botões no mobile */
+    _fillControlsList() {
+        const list = document.getElementById('controls-list');
+        if (!list) return;
+        const mobile = this._isMobileDevice();
+        const row = (label, valueHtml) =>
+            `<div class="flex justify-between items-center gap-2 bg-slate-900/60 p-2 rounded-lg">
+                <span class="text-slate-400">${label}</span>
+                <span class="font-mono text-amber-300 font-bold text-right">${valueHtml}</span>
+            </div>`;
+        const icon = (fa) => `<i class="fa-solid ${fa} text-amber-400"></i>`;
+        if (mobile) {
+            list.innerHTML = [
+                row('Mover', 'Joystick'),
+                row('Olhar', 'Arrastar tela'),
+                row('Correr', icon('fa-person-running')),
+                row('Pular', icon('fa-up-long')),
+                row('Atacar', icon('fa-hand-fist')),
+                row('Interagir', icon('fa-hand')),
+                row('Poção', icon('fa-flask')),
+                row('Inventário', icon('fa-bag-shopping')),
+                row('Personagem', icon('fa-user')),
+                row('Skills', icon('fa-star')),
+                row('1ª / 3ª pessoa', icon('fa-eye')),
+                row('Pausar', icon('fa-pause')),
+                row('Magias', 'Toque nos ícones'),
+            ].join('');
+        } else {
+            list.innerHTML = [
+                row('Mover', 'WASD'),
+                row('Correr', 'Shift'),
+                row('Pular', 'Espaço'),
+                row('Atacar', 'Mouse'),
+                row('Interagir', 'E'),
+                row('Mochila', 'I'),
+                row('Poção', 'Q'),
+                row('Personagem', 'C'),
+                row('Skills', 'K'),
+                row('1ª / 3ª pessoa', 'V'),
+                row('Magias', '1 – 6'),
+                row('Pausar', 'ESC / P'),
+            ].join('');
+        }
+    }
+
 
     triggerPlayerDeath() {
         if (typeof CONFIG !== 'undefined' && CONFIG.systems && !CONFIG.systems.gameOver) {
@@ -4545,31 +4916,29 @@ class GameEngine {
         if (this.ui) this.ui.close('death', true);
         else document.getElementById('death-modal')?.classList.add('hidden');
 
-        // Posição segura conforme o mapa atual
-        let rx = 0, rz = 8;
-        if (this.mapId === 3) { rx = 0; rz = 6; }       // pátio do castelo
-        else if (this.mapId === 2) { rx = 0; rz = 8; } // vale
-
-        const ry = (this.world && typeof this.world.getTerrainHeight === 'function')
-            ? this.world.getTerrainHeight(rx, rz)
-            : 2;
-
-        if (this.player && typeof this.player.respawn === 'function') {
-            this.player.respawn(rx, rz);
-            this.player.position.y = ry;
-            if (this.player.group) this.player.group.position.copy(this.player.position);
-        } else if (this.player) {
-            this.player.hp = this.player.maxHp;
-            this.player.position.set(rx, ry, rz);
-            this.player.velocity?.set(0, 0, 0);
-            if (this.player.group) this.player.group.position.copy(this.player.position);
-        }
-
-        this.isPaused = false;
-        if (this.gameStarted) {
-            if (typeof Utils !== 'undefined') Utils.requestLock();
-            else this._tryPointerLock();
-        }
+        // Sempre renasce NA VILA (mapa 1), como indica o botão
+        const goVillage = async () => {
+            if (this.mapId !== 1 && typeof this.transitionToMap1 === 'function') {
+                await this.transitionToMap1();
+            }
+            const spawn = this.getMapSpawnPosition(1);
+            if (this.player && typeof this.player.respawn === 'function') {
+                this.player.respawn(spawn.x, spawn.z);
+                this.player.position.y = spawn.y;
+                if (this.player.group) this.player.group.position.copy(this.player.position);
+            } else if (this.player) {
+                this.player.hp = this.player.maxHp;
+                this.player.position.set(spawn.x, spawn.y, spawn.z);
+                this.player.velocity?.set(0, 0, 0);
+                if (this.player.group) this.player.group.position.copy(this.player.position);
+            }
+            this.isPaused = false;
+            if (this.gameStarted) {
+                if (typeof Utils !== 'undefined') Utils.requestLock();
+                else this._tryPointerLock();
+            }
+        };
+        goVillage();
     }
 
     showPopDamage(pos3d, amt) {
@@ -4650,10 +5019,12 @@ class GameEngine {
             }
         }
         const data = {
-            saveVersion: 3,
+            saveVersion: 4,
             ...this.player.toSaveData(),
             inventory: this.inventory,
             questIdx: this.questManager ? this.questManager.idx : 0,
+            quests: this.questManager && typeof this.questManager.toSave === 'function'
+                ? this.questManager.toSave() : null,
             chests: chestStates,
             dayTime: this.dayTime
         };
@@ -4669,7 +5040,13 @@ class GameEngine {
             const d = JSON.parse(raw);
             this.player.fromSaveData(d);
             this.inventory = d.inventory || this.inventory;
-            if (this.questManager) this.questManager.idx = d.questIdx || 0;
+            if (this.questManager) {
+                if (d.quests && typeof this.questManager.fromSave === 'function') {
+                    this.questManager.fromSave(d.quests);
+                } else {
+                    this.questManager.idx = d.questIdx || 0;
+                }
+            }
             if (typeof d.dayTime === 'number') this.dayTime = d.dayTime;
             if (d.chests && this.world && Array.isArray(this.world.chests)) {
                 for (const st of d.chests) {

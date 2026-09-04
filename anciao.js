@@ -63,12 +63,13 @@
             profession: 'guard',
             dialogue:
                 'Mantenha a espada afiada, aventureiro. A muralha protege a vila, mas os monstros do vale não dormem. Se ouvir o sino, corra para o poço central.',
-            home: { x: 0, z: 8 },
+            // Posto perto da entrada (portão leste), sem sobrepor o spawn do jogador
+            home: { x: 22, z: 6 },
             patrolPoints: [
-                { x: 0, z: 8 },
-                { x: 5, z: 6 },
-                { x: 0, z: 4 },
-                { x: -5, z: 6 }
+                { x: 22, z: 6 },
+                { x: 18, z: 2 },
+                { x: 14, z: 6 },
+                { x: 18, z: 10 }
             ],
             walkSpeed: 1.85,
             scale: 1.05
@@ -80,12 +81,12 @@
             profession: 'blacksmith',
             dialogue:
                 'Minha forja nunca esfria! Traga minério do norte e forjo lâminas dignas de heróis. Essa sua arma... hum, já vi melhores. Volte quando tiver ouro de sobra.',
-            home: { x: -10, z: 4 },
+            home: { x: -12, z: 8 },
             patrolPoints: [
-                { x: -10, z: 4 },
-                { x: -8, z: 2 },
-                { x: -6, z: 4 },
-                { x: -8, z: 6 }
+                { x: -12, z: 8 },
+                { x: -10, z: 5 },
+                { x: -8, z: 8 },
+                { x: -10, z: 11 }
             ],
             walkSpeed: 1.35,
             scale: 1.08
@@ -669,8 +670,9 @@
             const p = this.parts;
             this.animTime += dt * 7.5;
             const s = Math.sin(this.animTime);
-            p.leftLeg.rotation.x = s * 0.55;
-            p.rightLeg.rotation.x = -s * 0.55;
+            // Marcha correta: pernas alternadas no eixo frente/trás.
+            p.leftLeg.rotation.x = -s * 0.55;
+            p.rightLeg.rotation.x = s * 0.55;
             p.leftArm.rotation.x = -s * 0.35;
             p.rightArm.rotation.x = s * 0.35;
             const bob = Math.abs(Math.sin(this.animTime * 2)) * 0.03;
@@ -771,7 +773,7 @@
         _separateNpcs() {
             const list = this.npcs;
             const n = list.length;
-            const minDist = 1.15;
+            const minDist = 1.35;
             for (let i = 0; i < n; i++) {
                 const a = list[i];
                 if (!a || !a.position) continue;

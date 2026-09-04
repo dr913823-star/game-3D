@@ -628,6 +628,17 @@ class Player {
         if (colliders) {
             for (let i = 0, len = colliders.length; i < len; i++) {
                 const c = colliders[i];
+
+                // A cerca é um obstáculo físico no chão, mas NÃO deve bloquear
+                // o jogador quando ele estiver pulando por cima dela.
+                // Os postes têm ~1.55m de altura; quando os pés do jogador
+                // estão acima do topo da cerca, ignoramos o colisor horizontal.
+                if (c.type === 'fence') {
+                    const groundY = this.world.getTerrainHeight(this.position.x, this.position.z);
+                    const fenceTop = groundY + 1.65;
+                    if (this.position.y > fenceTop) continue;
+                }
+
                 // Portas de teleporte: não empurram — o jogo teleporta ao colidir
                 if (c.type === 'teleport') continue;
                 // Colisor retangular (AABB) — muros, keep, etc.
