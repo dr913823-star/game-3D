@@ -1,6 +1,6 @@
 /**
  * anciao_marcus.js — Ancião Marcus, Guardião da Vila
- * Vestes azuis, cabelo branco, barba, cajado com orbe
+ * Vestes azuis, cabelo branco, barba
  */
 (function (global) {
     'use strict';
@@ -157,29 +157,6 @@
         const leftArm = makeNPCArm(-1);
         const rightArm = makeNPCArm(1);
         group.add(leftArm, rightArm);
-
-        // Cajado
-        const staff = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.035 * s, 0.04 * s, 2.3 * s, 8),
-            matWood
-        );
-        staff.position.set(0.55 * s, 1.15 * s, 0.1 * s);
-        staff.castShadow = true;
-        group.add(staff);
-        const orb = new THREE.Mesh(new THREE.SphereGeometry(0.12 * s, 10, 8), matGold);
-        orb.position.set(0.55 * s, 2.35 * s, 0.1 * s);
-        orb.castShadow = true;
-        group.add(orb);
-        // Brilho no orbe
-        const glow = new THREE.Mesh(
-            new THREE.SphereGeometry(0.08 * s, 8, 6),
-            new THREE.MeshStandardMaterial({
-                color: 0xfbbf24, emissive: 0xf59e0b, emissiveIntensity: 0.6,
-                transparent: true, opacity: 0.7
-            })
-        );
-        glow.position.set(0.55 * s, 2.35 * s, 0.1 * s);
-        group.add(glow);
 
         // ===== PERNAS =====
         // Pivot no quadril: a perna gira a partir do topo, nunca pelo centro.

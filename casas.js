@@ -55,7 +55,7 @@
             }
 
             this._createWell(0, 0);
-            this._createPlazaBenches();
+            // Bancos da praça removidos
             this._createVillageFence();
 
             if (Array.isArray(this.world.colliders)) {

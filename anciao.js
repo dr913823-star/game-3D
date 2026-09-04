@@ -18,9 +18,8 @@
     // -------------------------------------------------------------------------
     // DEFINIÇÕES DE NPCs
     // -------------------------------------------------------------------------
-    // Rotas no centro / caminhos entre casas (evitam colisores das casas)
-    // Rotas pré-definidas em áreas abertas (praça / caminhos), longe de casas e lojas.
-    // Se surgir obstáculo no caminho, o NPC para ou desvia um passo e segue.
+    // Rotas específicas por NPC, bem separadas (não se cruzam).
+    // Se surgir obstáculo/outro NPC no caminho: para, volta para o ponto anterior e segue no sentido inverso.
     const NPC_DEFS = [
         {
             id: 'npc_marcus',
@@ -29,14 +28,14 @@
             profession: 'elder',
             dialogue:
                 'Saudações, viajante! Os goblins infestam o vale ao norte. Derrote três e trarei recompensas. Cuidado também com a Besta das Sombras no sul...',
-            home: { x: -4, z: -4 },
+            home: { x: -3, z: -3 },
             patrolPoints: [
-                { x: -4, z: -4 },
-                { x: 4, z: -4 },
-                { x: 4, z: 4 },
-                { x: -4, z: 4 }
+                { x: -3, z: -3 },
+                { x: 3, z: -3 },
+                { x: 3, z: 3 },
+                { x: -3, z: 3 }
             ],
-            walkSpeed: 1.45,
+            walkSpeed: 1.35,
             scale: 1.0
         },
         {
@@ -46,14 +45,14 @@
             profession: 'farmer',
             dialogue:
                 'A colheita está boa este ano, graças aos espíritos da terra. Se vir lobos perto das plantações ao leste, me avise. Meu espantalho não assusta mais ninguém!',
-            home: { x: 2, z: -12 },
+            home: { x: 3, z: -13 },
             patrolPoints: [
-                { x: 2, z: -12 },
-                { x: -2, z: -12 },
-                { x: -2, z: -8 },
-                { x: 2, z: -8 }
+                { x: 3, z: -13 },
+                { x: -1, z: -13 },
+                { x: -1, z: -9 },
+                { x: 3, z: -9 }
             ],
-            walkSpeed: 1.55,
+            walkSpeed: 1.45,
             scale: 1.0
         },
         {
@@ -63,15 +62,15 @@
             profession: 'guard',
             dialogue:
                 'Mantenha a espada afiada, aventureiro. A muralha protege a vila, mas os monstros do vale não dormem. Se ouvir o sino, corra para o poço central.',
-            // Posto perto da entrada (portão leste), sem sobrepor o spawn do jogador
-            home: { x: 22, z: 6 },
+            // Longe das casas/lojas/cerca — corredor leste livre
+            home: { x: 22, z: 5 },
             patrolPoints: [
-                { x: 22, z: 6 },
-                { x: 18, z: 2 },
-                { x: 14, z: 6 },
-                { x: 18, z: 10 }
+                { x: 22, z: 5 },
+                { x: 22, z: 8 },
+                { x: 20, z: 6 },
+                { x: 22, z: 3 }
             ],
-            walkSpeed: 1.85,
+            walkSpeed: 1.65,
             scale: 1.05
         },
         {
@@ -81,14 +80,14 @@
             profession: 'blacksmith',
             dialogue:
                 'Minha forja nunca esfria! Traga minério do norte e forjo lâminas dignas de heróis. Essa sua arma... hum, já vi melhores. Volte quando tiver ouro de sobra.',
-            home: { x: -12, z: 8 },
+            home: { x: -13, z: 9 },
             patrolPoints: [
-                { x: -12, z: 8 },
-                { x: -10, z: 5 },
-                { x: -8, z: 8 },
-                { x: -10, z: 11 }
+                { x: -13, z: 9 },
+                { x: -11, z: 6 },
+                { x: -9, z: 9 },
+                { x: -11, z: 12 }
             ],
-            walkSpeed: 1.35,
+            walkSpeed: 1.25,
             scale: 1.08
         },
         {
@@ -98,14 +97,14 @@
             profession: 'healer',
             dialogue:
                 'As feridas do corpo e da alma encontram alívio aqui. Colho ervas perto do rio — mas cuidado com a água escura. Se precisar de poções, é só pedir.',
-            home: { x: -6, z: -6 },
+            home: { x: -8, z: -7 },
             patrolPoints: [
-                { x: -6, z: -6 },
-                { x: -8, z: -4 },
-                { x: -6, z: -2 },
-                { x: -4, z: -4 }
+                { x: -8, z: -7 },
+                { x: -10, z: -5 },
+                { x: -8, z: -3 },
+                { x: -6, z: -5 }
             ],
-            walkSpeed: 1.4,
+            walkSpeed: 1.3,
             scale: 0.95
         },
         {
@@ -115,14 +114,14 @@
             profession: 'merchant',
             dialogue:
                 'Bem-vindo à minha tenda! Especiarias do sul, tecidos élficos, e um ou outro artefato... misterioso. Tudo tem preço — e eu sempre tenho o melhor.',
-            home: { x: 6, z: 2 },
+            home: { x: 8, z: 3 },
             patrolPoints: [
-                { x: 6, z: 2 },
-                { x: 8, z: 0 },
-                { x: 6, z: -2 },
-                { x: 4, z: 0 }
+                { x: 8, z: 3 },
+                { x: 10, z: 1 },
+                { x: 8, z: -1 },
+                { x: 6, z: 1 }
             ],
-            walkSpeed: 1.5,
+            walkSpeed: 1.4,
             scale: 0.98
         },
         {
@@ -132,31 +131,32 @@
             profession: 'child',
             dialogue:
                 'Você é um herói de verdade? Eu vi um goblin ontem perto da cerca! ...Tá, talvez fosse só a sombra do espantalho. Quer brincar de esconde-esconde?',
-            home: { x: 2, z: 0 },
+            // Longe do poço — área sudeste aberta (sem lojas/casas)
+            home: { x: 14, z: -4 },
             patrolPoints: [
-                { x: 2, z: 0 },
-                { x: 0, z: 3 },
-                { x: -2, z: 0 },
-                { x: 0, z: -3 }
+                { x: 14, z: -4 },
+                { x: 16, z: -7 },
+                { x: 13, z: -9 },
+                { x: 11, z: -6 }
             ],
-            walkSpeed: 2.2,
+            walkSpeed: 1.9,
             scale: 0.72
         },
-        // Aldeões — rotas curtas na frente das casas (lado da praça)
+        // Aldeões — rotas curtas e separadas, frente das casas
         {
             id: 'npc_aldeao_1',
             name: 'Greta',
             title: 'Aldeã',
             profession: 'villager',
             dialogue: 'Bom dia! As casas novas deixaram a vila mais viva. Se precisar de farinha, o forno da praça ainda funciona.',
-            home: { x: 12, z: -8 },
+            home: { x: 13, z: -9 },
             patrolPoints: [
-                { x: 12, z: -8 },
-                { x: 10, z: -6 },
-                { x: 12, z: -4 },
-                { x: 14, z: -6 }
+                { x: 13, z: -9 },
+                { x: 11, z: -7 },
+                { x: 13, z: -5 },
+                { x: 15, z: -7 }
             ],
-            walkSpeed: 1.4,
+            walkSpeed: 1.3,
             scale: 0.96,
             clothColor: 0x9a3412,
             accentColor: 0x7c2d12,
@@ -168,14 +168,14 @@
             title: 'Aldeão',
             profession: 'villager',
             dialogue: 'Trabalho no quintal desde o amanhecer. Os goblins andam quietos... demais. Fique de olho na cerca sul.',
-            home: { x: 4, z: -14 },
+            home: { x: 5, z: -15 },
             patrolPoints: [
-                { x: 4, z: -14 },
-                { x: 2, z: -12 },
-                { x: 4, z: -10 },
-                { x: 6, z: -12 }
+                { x: 5, z: -15 },
+                { x: 3, z: -13 },
+                { x: 5, z: -11 },
+                { x: 7, z: -13 }
             ],
-            walkSpeed: 1.45,
+            walkSpeed: 1.35,
             scale: 1.02,
             clothColor: 0x3f6212,
             accentColor: 0x365314,
@@ -187,14 +187,14 @@
             title: 'Aldeã',
             profession: 'villager',
             dialogue: 'Trouxe ervas do rio para a Elara. Cuidado com a correnteza — a água esconde pedras traiçoeiras.',
-            home: { x: -4, z: -14 },
+            home: { x: -5, z: -15 },
             patrolPoints: [
-                { x: -4, z: -14 },
-                { x: -2, z: -12 },
-                { x: -4, z: -10 },
-                { x: -6, z: -12 }
+                { x: -5, z: -15 },
+                { x: -3, z: -13 },
+                { x: -5, z: -11 },
+                { x: -7, z: -13 }
             ],
-            walkSpeed: 1.45,
+            walkSpeed: 1.35,
             scale: 0.94,
             clothColor: 0x1d4ed8,
             accentColor: 0x1e3a8a,
@@ -206,14 +206,14 @@
             title: 'Aldeão',
             profession: 'villager',
             dialogue: 'Consertei o telhado da casa do canto. Se ouvir barulho à noite, é só o vento... espero.',
-            home: { x: -12, z: -8 },
+            home: { x: -13, z: -9 },
             patrolPoints: [
-                { x: -12, z: -8 },
-                { x: -10, z: -6 },
-                { x: -12, z: -4 },
-                { x: -14, z: -6 }
+                { x: -13, z: -9 },
+                { x: -11, z: -7 },
+                { x: -13, z: -5 },
+                { x: -15, z: -7 }
             ],
-            walkSpeed: 1.35,
+            walkSpeed: 1.25,
             scale: 1.05,
             clothColor: 0x57534e,
             accentColor: 0x292524,
@@ -336,6 +336,7 @@
 
             this.state = 'IDLE';
             this.patrolIndex = 0;
+            this.patrolDir = 1; // 1 = frente, -1 = volta na rota
             this.idleTimer = 1 + Math.random() * 3;
             this.animTime = Math.random() * 10;
             this.facing = Math.random() * Math.PI * 2;
@@ -345,7 +346,7 @@
             this.idleWaitMin = 2.0;
             this.idleWaitMax = 5.0;
             this.walkSpeed = def.walkSpeed || 1.6;
-            this.bodyRadius = 0.55;
+            this.bodyRadius = 0.6;
             this.stuckTimer = 0;
             this._lastX = this.position.x;
             this._lastZ = this.position.z;
@@ -353,6 +354,7 @@
             this._moveNx = 0;
             this._moveNz = 1;
             this.blockWait = 0;
+            this._otherNpcs = null; // preenchido pelo manager a cada frame
 
             this.parts = createNPCMesh(def);
             this.group = this.parts.group;
@@ -387,10 +389,11 @@
                 this._animateIdle(dt);
                 if (this.idleTimer <= 0) {
                     this.state = 'WALK';
-                    this.patrolIndex = (this.patrolIndex + 1) % this.def.patrolPoints.length;
+                    this._advancePatrol();
                 }
             } else if (this.state === 'WALK') {
-                const target = this.def.patrolPoints[this.patrolIndex];
+                const pts = this.def.patrolPoints;
+                const target = pts[this.patrolIndex];
                 const dx = target.x - this.position.x;
                 const dz = target.z - this.position.z;
                 const dist = Math.hypot(dx, dz);
@@ -406,36 +409,42 @@
                     let nx = dx / dist;
                     let nz = dz / dist;
 
-                    // Passo à frente na rota
+                    // Passo à frente na rota (olha também outros NPCs)
                     const step = this.walkSpeed * dt;
                     const nextX = this.position.x + nx * step * 2.5;
                     const nextZ = this.position.z + nz * step * 2.5;
 
-                    if (this._pointBlocked(nextX, nextZ, 0.15)) {
-                        // Obstáculo na rota: tenta 1 desvio lateral; senão para
-                        const side = this._steerSide || 1;
-                        const lx = -nz * side;
-                        const lz = nx * side;
-                        const sideX = this.position.x + lx * 1.1;
-                        const sideZ = this.position.z + lz * 1.1;
-                        if (!this._pointBlocked(sideX, sideZ, 0.1)) {
-                            // Desvia um passo para o lado e continua
-                            this.position.x += lx * this.walkSpeed * dt;
-                            this.position.z += lz * this.walkSpeed * dt;
-                            this._resolveColliders();
-                            this.position.y = this.world.getTerrainHeight(this.position.x, this.position.z);
-                            this._lookAt(this.position.x + lx, this.position.z + lz, dt, 5);
-                            this._animateWalk(dt);
-                        } else {
-                            // Para, espera e depois pula o ponto da rota
+                    if (this._pointBlocked(nextX, nextZ, 0.12) || this._npcBlocked(nextX, nextZ)) {
+                        // Obstáculo ou NPC: tenta desvio nos dois lados
+                        let steered = false;
+                        for (const side of [this._steerSide || 1, -(this._steerSide || 1)]) {
+                            const lx = -nz * side;
+                            const lz = nx * side;
+                            const sideX = this.position.x + lx * 1.35;
+                            const sideZ = this.position.z + lz * 1.35;
+                            if (!this._pointBlocked(sideX, sideZ, 0.1) && !this._npcBlocked(sideX, sideZ)) {
+                                this.position.x += lx * this.walkSpeed * dt * 1.1;
+                                this.position.z += lz * this.walkSpeed * dt * 1.1;
+                                this._resolveColliders();
+                                this.position.y = this.world.getTerrainHeight(this.position.x, this.position.z);
+                                this._lookAt(this.position.x + lx, this.position.z + lz, dt, 5);
+                                this._animateWalk(dt);
+                                this._steerSide = side;
+                                steered = true;
+                                this.blockWait = 0;
+                                break;
+                            }
+                        }
+                        if (!steered) {
+                            // Para, espera e volta na rota (sem travar em loop)
                             this.blockWait = (this.blockWait || 0) + dt;
                             this._animateIdle(dt);
-                            if (this.blockWait > 1.0) {
+                            if (this.blockWait > 1.2) {
                                 this.blockWait = 0;
-                                this._steerSide = -side;
-                                this.patrolIndex = (this.patrolIndex + 1) % this.def.patrolPoints.length;
+                                this.patrolDir = -(this.patrolDir || 1);
+                                this._advancePatrol();
                                 this.state = 'IDLE';
-                                this.idleTimer = 0.5 + Math.random() * 0.5;
+                                this.idleTimer = 0.3 + Math.random() * 0.5;
                             }
                         }
                     } else {
@@ -452,6 +461,37 @@
             }
 
             this._apply(camPos);
+        }
+
+        /** Avança (ou retrocede) o índice da rota conforme patrolDir */
+        _advancePatrol() {
+            const pts = this.def.patrolPoints;
+            const n = pts.length;
+            if (n < 2) return;
+            let dir = this.patrolDir || 1;
+            let next = this.patrolIndex + dir;
+            if (next >= n) {
+                dir = -1;
+                next = n - 2;
+            } else if (next < 0) {
+                dir = 1;
+                next = 1;
+            }
+            this.patrolDir = dir;
+            this.patrolIndex = next;
+        }
+
+        /** True se o ponto colide com outro NPC */
+        _npcBlocked(x, z) {
+            const others = this._otherNpcs;
+            if (!others || !others.length) return false;
+            const minD = (this.bodyRadius || 0.6) * 2.1;
+            for (let i = 0; i < others.length; i++) {
+                const o = others[i];
+                if (!o || o === this || !o.position) continue;
+                if (Math.hypot(x - o.position.x, z - o.position.z) < minD) return true;
+            }
+            return false;
         }
 
         /** Impede NPC de atravessar casas, poço e outros colisores */
@@ -763,6 +803,10 @@
                 typeof Game !== 'undefined' && Game.camera
                     ? Game.camera.position
                     : null;
+            // Cada NPC conhece os demais para desviar / parar
+            for (const npc of this.npcs) {
+                npc._otherNpcs = this.npcs;
+            }
             for (const npc of this.npcs) {
                 npc.update(dt, playerPos, camPos);
             }
@@ -773,7 +817,7 @@
         _separateNpcs() {
             const list = this.npcs;
             const n = list.length;
-            const minDist = 1.35;
+            const minDist = 1.55;
             for (let i = 0; i < n; i++) {
                 const a = list[i];
                 if (!a || !a.position) continue;
@@ -787,7 +831,7 @@
                         dx = 1; dz = 0; dist = 0.001;
                     }
                     if (dist < minDist) {
-                        const push = (minDist - dist) * 0.5;
+                        const push = (minDist - dist) * 0.55;
                         const nx = dx / dist;
                         const nz = dz / dist;
                         a.position.x += nx * push;

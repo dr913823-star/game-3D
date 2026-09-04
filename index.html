@@ -228,13 +228,13 @@
             /* Pausa do HUD desktop fica oculta — usamos a do mobile-controls */
             #btn-pause-hud { display: none !important; }
 
-            /* Missão — pequena e no alto (não cobre o joystick de movimento) */
+            /* Missão — canto superior direito (abaixo do relógio/FPS) */
             #quest-hud-panel {
                 position: absolute !important;
-                left: 6px !important;
-                top: 5.6rem !important; /* logo abaixo do painel de stats */
+                left: auto !important;
+                right: 6px !important;
+                top: 4.2rem !important;
                 bottom: auto !important;
-                right: auto !important;
                 padding: 0.28rem 0.4rem !important;
                 max-width: 8.2rem !important;
                 width: auto !important;
@@ -321,7 +321,9 @@
             .mobile-btn-sm { width: 36px !important; height: 36px !important; font-size: 0.85rem !important; }
             #mobile-top-right { top: 6px !important; right: 6px !important; gap: 0.25rem !important; }
             #quest-hud-panel {
-                top: 4.6rem !important;
+                top: 3.6rem !important;
+                right: 6px !important;
+                left: auto !important;
                 max-width: 7.2rem !important;
                 padding: 0.22rem 0.35rem !important;
             }
